@@ -17,9 +17,10 @@ function clone() {
   git clone "$1"
 }
 
-# Init a git repo
+# Initialize a Git repo with 'main' as default branch
 function init() {
-  git init
+  echo "🧱 Initializing Git repository with 'main' as default branch..."
+  git init -b main
 }
 
 # Add all changes
@@ -212,4 +213,23 @@ function ignore() {
   else
     echo "ℹ️ '$1' is already in .gitignore"
   fi
+}
+
+# Push to new remote
+function pushnew() {
+  if [ -z "$1" ]; then
+    echo "❌ Usage: pushnew <remote-url>"
+    return 1
+  fi
+
+  REMOTE_URL="$1"
+  BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+  echo "🔗 Adding remote origin..."
+  git remote add origin "$REMOTE_URL"
+
+  echo "🚀 Publishing current branch '$BRANCH' to origin..."
+  git push -u origin "$BRANCH"
+
+  echo "✅ Repo published to: $REMOTE_URL"
 }
