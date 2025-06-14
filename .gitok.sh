@@ -5,7 +5,6 @@
 # Gitok Configuration
 GITOK_VERSION="1.0.0"
 GITOK_REPO="https://raw.githubusercontent.com/okwareddevnest/gitok/main"
-GITOK_INSTALL_DIR="$HOME"
 GITOK_SCRIPT_PATH="$HOME/.gitok.sh"
 
 # Version and help functions
@@ -56,7 +55,7 @@ function gitok_update() {
   fi
   
   echo "🆕 New version available: v$LATEST_VERSION (current: v$GITOK_VERSION)"
-  read -p "Do you want to update? (y/N): " confirm
+  read -r -p "Do you want to update? (y/N): " confirm
   
   if [[ "$confirm" =~ ^[Yy]$ ]]; then
     echo "📥 Downloading latest version..."
@@ -150,7 +149,7 @@ function unpush() {
   remote=${1:-origin}  # default to origin if not specified
 
   echo "⚠️ WARNING: This will remove the last commit from $remote/$branch"
-  read -p "Are you sure? Type 'yes' to continue: " confirm
+  read -r -p "Are you sure? Type 'yes' to continue: " confirm
   if [[ "$confirm" == "yes" ]]; then
     git push "$remote" HEAD~1:"$branch" --force
     echo "✅ Unpushed last commit from $remote/$branch"
@@ -247,7 +246,7 @@ function makeignore() {
 # Squash last N commits
 function squashlast() {
   count=${1:-2}
-  git reset --soft HEAD~$count
+  git reset --soft HEAD~"$count"
   echo "Now run: git commit -m 'Your combined message'"
 }
 
