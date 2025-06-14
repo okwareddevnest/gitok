@@ -3,7 +3,7 @@
 # Created by Dedan Okware
 
 # Gitok Configuration
-GITOK_VERSION="1.2.0"
+GITOK_VERSION="1.3.0"
 GITOK_REPO="https://raw.githubusercontent.com/okwareddevnest/gitok/main"
 GITOK_SCRIPT_PATH="$HOME/.gitok.sh"
 
