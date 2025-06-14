@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Core Git operations: commit, push, pull, branch management
 - Advanced features: pushall, unpush, squashlast
 - Safety confirmations for destructive operations
-- MIT License
+- Apache License
 - Basic README documentation
 
 ### Features

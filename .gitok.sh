@@ -314,7 +314,7 @@ function gitcheatsheet() {
   echo ""
   echo "🚀 ==============================================="
   echo "           GITOK COMMANDS CHEATSHEET"
-  echo "   Git CLI Aliases by Dedan Okware"
+  echo "       Git CLI Aliases by Dedan Okware"
   echo "==============================================="
   echo ""
   echo "📂 REPOSITORY MANAGEMENT"
