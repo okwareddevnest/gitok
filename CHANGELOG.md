@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-06-15
+
+### ✨ Added
+- Enhance Gitok with comprehensive improvements - dynamic changelog, auto-update, CI/CD pipeline, ShellCheck fixes
+
+### 📝 Other Changes
+- 🔖 Bump version to v1.1.0
+
+
 ## [1.1.0] - 2025-06-14
 
 ### ✨ Added
