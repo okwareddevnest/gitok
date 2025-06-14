@@ -5,5 +5,5 @@ Gitok is a productivity boost for developers. It includes custom Git commands an
 ## ✨ Install
 
 ```bash
-curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh
+bash <(curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh)
 ```
