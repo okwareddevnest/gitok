@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-06-14
+
+### ✨ Added
+- Update CI workflow: Add permissions for contents, issues, and pull-requests; configure Git to use global settings; and implement a step to push changes to the main branch after release notes generation.
+- Add .gitignore: Create a new .gitignore file to exclude common OS, editor, and temporary files. Enhance .gitok.sh with versioning and update functionality, including dynamic changelog generation. Introduce CI/CD pipeline for automated testing and release management. Update README.md and scripts documentation for clarity on new features.
+- Remove .gitignore: Delete the file containing patterns for ignored files, as it is no longer needed. Add Git aliases cheatsheet to .gitok.sh for easier command reference.
+- Add .gitignore: Include common OS, editor, and temporary files to be ignored by Git
+- Enhance .gitok.sh: Initialize Git repo with 'main' as default branch and add pushnew function for publishing to a new remote.
+- Initial commit of Gitok, a CLI tool with custom Git commands. Added main script (.gitok.sh), installation script (install.sh), license (LICENSE), and README documentation.
+
+### 🚀 Improved
+- Refactor user prompts in .gitok.sh: Update read commands to use -r flag for better handling of input and modify git reset command to quote the count variable for improved safety.
+- Update README.md: Modify installation command to use curl directly for improved clarity.
+
+
 ### ✨ Added
 - Dynamic changelog generation system
 - Auto-generated release notes from git commits
