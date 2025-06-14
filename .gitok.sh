@@ -2,6 +2,82 @@
 # Gitok CLI Aliases
 # Created by Dedan Okware
 
+# Gitok Configuration
+GITOK_VERSION="1.0.0"
+GITOK_REPO="https://raw.githubusercontent.com/okwareddevnest/gitok/main"
+GITOK_INSTALL_DIR="$HOME"
+GITOK_SCRIPT_PATH="$HOME/.gitok.sh"
+
+# Version and help functions
+function gitok() {
+  case "$1" in
+    --version|-v)
+      echo "Gitok v$GITOK_VERSION"
+      echo "Git CLI Aliases by Dedan Okware"
+      echo "Repository: https://github.com/okwareddevnest/gitok"
+      ;;
+    --help|-h)
+      gitcheatsheet
+      ;;
+    --update|-u)
+      gitok_update
+      ;;
+    *)
+      echo "Gitok v$GITOK_VERSION - Git CLI Aliases"
+      echo ""
+      echo "Usage:"
+      echo "  gitok --version    Show version"
+      echo "  gitok --help       Show commands cheatsheet"
+      echo "  gitok --update     Update to latest version"
+      echo ""
+      echo "Or use any of the git aliases directly. Run 'gitcheatsheet' for full list."
+      ;;
+  esac
+}
+
+# Update functionality
+function gitok_update() {
+  echo "🔄 Checking for Gitok updates..."
+  
+  # Get latest version from GitHub
+  LATEST_VERSION=$(curl -s "$GITOK_REPO/VERSION" 2>/dev/null)
+  
+  if [ -z "$LATEST_VERSION" ]; then
+    echo "❌ Failed to check for updates. Please check your internet connection."
+    return 1
+  fi
+  
+  # Remove any whitespace
+  LATEST_VERSION=$(echo "$LATEST_VERSION" | tr -d '[:space:]')
+  
+  if [ "$LATEST_VERSION" = "$GITOK_VERSION" ]; then
+    echo "✅ You already have the latest version (v$GITOK_VERSION)"
+    return 0
+  fi
+  
+  echo "🆕 New version available: v$LATEST_VERSION (current: v$GITOK_VERSION)"
+  read -p "Do you want to update? (y/N): " confirm
+  
+  if [[ "$confirm" =~ ^[Yy]$ ]]; then
+    echo "📥 Downloading latest version..."
+    
+    # Backup current version
+    cp "$GITOK_SCRIPT_PATH" "${GITOK_SCRIPT_PATH}.backup"
+    
+    # Download new version
+    if curl -sL "$GITOK_REPO/.gitok.sh" -o "$GITOK_SCRIPT_PATH"; then
+      echo "✅ Gitok updated to v$LATEST_VERSION"
+      echo "🔄 Please restart your terminal or run: source ~/.bashrc"
+      echo "💾 Backup saved as: ${GITOK_SCRIPT_PATH}.backup"
+    else
+      echo "❌ Update failed. Restoring backup..."
+      mv "${GITOK_SCRIPT_PATH}.backup" "$GITOK_SCRIPT_PATH"
+    fi
+  else
+    echo "❌ Update cancelled"
+  fi
+}
+
 # Check if in a Git repo
 function in_git_repo() {
   git rev-parse --is-inside-work-tree &>/dev/null
@@ -295,12 +371,16 @@ function gitcheatsheet() {
   echo "  ignore <pattern>      Add pattern to .gitignore"
   echo "  makeignore <type>     Create .gitignore from template"
   echo ""
-  echo "❓ HELP"
+  echo "❓ HELP & INFO"
   echo "  gitcheatsheet         Show this cheatsheet"
+  echo "  gitok --version       Show Gitok version"
+  echo "  gitok --help          Show this cheatsheet"
+  echo "  gitok --update        Update to latest version"
   echo ""
   echo "==============================================="
   echo "💡 TIP: Most commands work only in git repos"
   echo "⚠️  Commands marked dangerous require confirmation"
+  echo "🔄 Use 'gitok --update' to get latest features"
   echo "==============================================="
   echo ""
 }

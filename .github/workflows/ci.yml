@@ -1,0 +1,170 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test & Validate
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck
+        
+    - name: Validate shell scripts
+      run: |
+        echo "🔍 Running ShellCheck on scripts..."
+        shellcheck .gitok.sh
+        shellcheck install.sh
+        echo "✅ Shell scripts validation passed"
+        
+    - name: Test installation script
+      run: |
+        echo "🧪 Testing installation script..."
+        bash -n install.sh
+        echo "✅ Installation script syntax check passed"
+        
+    - name: Test gitok functions
+      run: |
+        echo "🧪 Testing gitok functions..."
+        source .gitok.sh
+        echo "Testing version command..."
+        gitok --version
+        echo "✅ Basic functionality test passed"
+
+  version-and-release:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]'))
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+        
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+    - name: Get current version
+      id: current_version
+      run: |
+        CURRENT_VERSION=$(cat VERSION)
+        echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $CURRENT_VERSION"
+        
+    - name: Bump version
+      id: bump_version
+      run: |
+        CURRENT_VERSION="${{ steps.current_version.outputs.current }}"
+        BUMP_TYPE="${{ github.event.inputs.version_bump || 'patch' }}"
+        
+        IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+        MAJOR=${VERSION_PARTS[0]}
+        MINOR=${VERSION_PARTS[1]}
+        PATCH=${VERSION_PARTS[2]}
+        
+        case $BUMP_TYPE in
+          major)
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+            ;;
+          minor)
+            MINOR=$((MINOR + 1))
+            PATCH=0
+            ;;
+          patch)
+            PATCH=$((PATCH + 1))
+            ;;
+        esac
+        
+        NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+        echo "$NEW_VERSION" > VERSION
+        echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "New version: $NEW_VERSION"
+        
+    - name: Update version in script
+      run: |
+        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
+        sed -i "s/GITOK_VERSION=\".*\"/GITOK_VERSION=\"$NEW_VERSION\"/" .gitok.sh
+        echo "Updated version in .gitok.sh to $NEW_VERSION"
+        
+    - name: Generate dynamic changelog
+      run: |
+        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
+        chmod +x scripts/generate-changelog.sh
+        ./scripts/generate-changelog.sh changelog "$NEW_VERSION"
+        echo "Generated changelog for v$NEW_VERSION"
+        
+    - name: Commit version bump and changelog
+      run: |
+        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
+        git add VERSION .gitok.sh CHANGELOG.md
+        git commit -m "🔖 Bump version to v$NEW_VERSION
+
+        - Updated version in core script
+        - Auto-generated changelog from commits
+        - Ready for release"
+        git push origin main
+        
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
+        RELEASE_NOTES=$(./scripts/generate-changelog.sh release-notes "$NEW_VERSION")
+        echo "Generated release notes for v$NEW_VERSION"
+        # Save to environment variable for GitHub Actions
+        echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+        echo "$RELEASE_NOTES" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+        
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.bump_version.outputs.new }}
+        release_name: Release v${{ steps.bump_version.outputs.new }}
+        body: ${{ env.RELEASE_NOTES }}
+        draft: false
+        prerelease: false
+
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Scan
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run security scan
+      run: |
+        echo "🔒 Running basic security checks..."
+        # Check for common security issues in shell scripts
+        grep -r "eval\|exec\|system" . --include="*.sh" || echo "No dangerous functions found"
+        echo "✅ Security scan completed" 
