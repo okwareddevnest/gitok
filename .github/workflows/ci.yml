@@ -17,6 +17,11 @@ on:
         - minor
         - major
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -56,6 +61,9 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]'))
+    permissions:
+      contents: write
+      pull-requests: write
     
     steps:
     - name: Checkout code
@@ -63,11 +71,13 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
+        persist-credentials: true
         
     - name: Configure Git
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+        git config --global user.email "action@github.com"
+        git config --global user.name "GitHub Action"
+        git config --global init.defaultBranch main
         
     - name: Get current version
       id: current_version
@@ -129,6 +139,11 @@ jobs:
         - Updated version in core script
         - Auto-generated changelog from commits
         - Ready for release"
+        
+    - name: Push changes to main
+      run: |
+        # Configure git with the token
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
         git push origin main
         
     - name: Generate release notes
