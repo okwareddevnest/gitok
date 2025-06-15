@@ -12,10 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - 2025-06-15
 
 ### ✨ Added
-- Add comprehensive Windows support - PowerShell installer, batch installer, WSL support, detailed documentation
+- Automated shell profile configuration across all platforms
+- Enhanced install.sh with intelligent shell detection (bash, zsh, fish)
+- Automatic profile configuration with duplicate prevention
+- Immediate activation in current session
+- Improved Windows PowerShell installer with better error handling
+- Enhanced Windows batch installer with comprehensive testing
+- Cross-platform compatibility (Linux, macOS, Windows/WSL, Git Bash)
 
-### 📝 Other Changes
-- 🔖 Bump version to v1.3.0
+### 🚀 Improved
+- Installer documentation and user experience polish
+- Colorized output and better user feedback
+- Installation testing and validation
+- Shell startup configuration management
 
 
 ## [1.3.0] - 2025-06-14
