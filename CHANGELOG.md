@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-06-15
+
+### ✨ Added
+- Add comprehensive Windows support - PowerShell installer, batch installer, WSL support, detailed documentation
+
+### 📝 Other Changes
+- 🔖 Bump version to v1.3.0
+
+
 ## [1.3.0] - 2025-06-14
 
 ### ✨ Added
