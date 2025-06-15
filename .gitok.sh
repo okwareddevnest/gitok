@@ -38,8 +38,8 @@ function gitok() {
 function gitok_update() {
   echo "🔄 Checking for Gitok updates..."
   
-  # Get latest version from GitHub
-  LATEST_VERSION=$(curl -s "$GITOK_REPO/VERSION" 2>/dev/null)
+  # Get latest version from GitHub API (more reliable than CDN)
+  LATEST_VERSION=$(curl -s "https://api.github.com/repos/okwareddevnest/gitok/contents/VERSION" 2>/dev/null | grep '"content"' | cut -d'"' -f4 | base64 -d 2>/dev/null)
   
   if [ -z "$LATEST_VERSION" ]; then
     echo "❌ Failed to check for updates. Please check your internet connection."
