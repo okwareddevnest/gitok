@@ -10,17 +10,49 @@ Gitok is a productivity boost for developers. It includes 35+ custom Git command
 - 🔒 **Safety confirmations** for destructive operations
 - 📦 **Semantic versioning** with automated releases
 - 🛠️ **CI/CD pipeline** with GitHub Actions
+- 🪟 **Cross-platform support** (Linux, macOS, Windows WSL, Git Bash)
 - ⚡ **Zero configuration** - works out of the box
 
 ## 📦 Installation
 
+### 🐧 Linux & macOS
 ```bash
 bash <(curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh)
 ```
 
-After installation, restart your terminal or run:
+### 🪟 Windows Users
+
+**Option 1: Windows Subsystem for Linux (WSL) - Recommended**
+```powershell
+# Install WSL if not already installed
+wsl --install
+
+# After restart, install Gitok in WSL
+wsl bash -c "curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh | bash"
+```
+
+**Option 2: Git Bash (comes with Git for Windows)**
+1. Install [Git for Windows](https://git-scm.com/download/win) (includes Git Bash)
+2. Open Git Bash terminal
+3. Run: `bash <(curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh)`
+
+**Option 3: Automated Windows Installer**
+```powershell
+# PowerShell (Run as Administrator)
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/okwareddevnest/gitok/main/install-windows.ps1'))
+
+# OR download and double-click
+# https://raw.githubusercontent.com/okwareddevnest/gitok/main/install-windows.bat
+```
+
+### ✅ Verify Installation
 ```bash
+# Restart your terminal or run:
 source ~/.bashrc  # or source ~/.zshrc
+
+# Test installation
+gitok --version
+gitcheatsheet
 ```
 
 ## 🔄 Updates
