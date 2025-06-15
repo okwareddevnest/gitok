@@ -58,7 +58,7 @@ This directory contains utility scripts for managing Gitok versions and releases
 ## 🔄 Automated Workflows
 
 ### CI/CD Integration
-The scripts are automatically used by GitHub Actions:
+The scripts are used by GitHub Actions for CI/CD:
 
 1. **On manual release trigger** → Bumps version → Generates changelog → Creates release
 2. **On `[release]` commit** → Auto-triggers release workflow
@@ -86,7 +86,7 @@ chore: update CI/CD pipeline configuration
    ```bash
    git push origin main --tags
    ```
-4. **GitHub Actions will automatically create the release!**
+4. **GitHub Actions will create the release!**
 
 ## 📊 How It Works
 
@@ -112,4 +112,4 @@ chore: update CI/CD pipeline configuration
 
 ---
 
-💡 **Pro Tip:** Use descriptive commit messages for better auto-generated changelogs! 
+💡 **Pro Tip:** Use descriptive commit messages for better changelogs! 

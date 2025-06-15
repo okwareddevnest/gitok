@@ -5,7 +5,7 @@ All notable changes to Gitok will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-**🚀 This changelog is now automatically generated from git commits!**
+**🚀 This changelog is generated from git commits using our custom tooling!**
 
 ## [Unreleased]
 

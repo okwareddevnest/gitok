@@ -1,6 +1,6 @@
 #!/bin/bash
 # Changelog generation script for Gitok
-# Automatically generates release notes from git commits
+# Release notes and changelog generator for Gitok
 
 set -e
 
