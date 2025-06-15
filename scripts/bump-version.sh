@@ -58,7 +58,7 @@ if [ ! -f "$VERSION_FILE" ]; then
     exit 1
 fi
 
-CURRENT_VERSION=$(cat "$VERSION_FILE" | tr -d '[:space:]')
+CURRENT_VERSION=$(tr -d '[:space:]' < "$VERSION_FILE")
 echo -e "${BLUE}📋 Current version: $CURRENT_VERSION${NC}"
 
 # Parse version parts

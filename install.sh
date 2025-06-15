@@ -33,9 +33,11 @@ add_to_profile() {
     
     # Check if gitok is already sourced in this profile
     if ! grep -q "source.*\.gitok\.sh" "$profile_file" && ! grep -q "\..*\.gitok\.sh" "$profile_file"; then
-        echo "" >> "$profile_file"
-        echo "# Gitok - Git CLI Aliases" >> "$profile_file"
-        echo "source ~/.gitok.sh" >> "$profile_file"
+        {
+            echo ""
+            echo "# Gitok - Git CLI Aliases"
+            echo "source ~/.gitok.sh"
+        } >> "$profile_file"
         echo -e "${GREEN}✅ Added Gitok to $profile_name${NC}"
         return 0
     else
@@ -82,9 +84,11 @@ if command -v fish >/dev/null 2>&1; then
     fi
     
     if ! grep -q "source.*\.gitok\.sh" "$fish_config_file"; then
-        echo "" >> "$fish_config_file"
-        echo "# Gitok - Git CLI Aliases" >> "$fish_config_file"
-        echo "source ~/.gitok.sh" >> "$fish_config_file"
+        {
+            echo ""
+            echo "# Gitok - Git CLI Aliases"
+            echo "source ~/.gitok.sh"
+        } >> "$fish_config_file"
         echo -e "${GREEN}✅ Added Gitok to config.fish${NC}"
         ((PROFILES_UPDATED++))
     else
@@ -94,6 +98,7 @@ fi
 
 # Try to source immediately in current shell
 echo -e "${BLUE}🔄 Activating Gitok in current session...${NC}"
+# shellcheck source=/dev/null
 if source ~/.gitok.sh 2>/dev/null; then
     echo -e "${GREEN}✅ Gitok activated in current session${NC}"
     
