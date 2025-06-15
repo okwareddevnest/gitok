@@ -113,7 +113,7 @@ git add "$VERSION_FILE" "$GITOK_SCRIPT" "$PROJECT_ROOT/CHANGELOG.md"
 git commit -m "🔖 Bump version to v$NEW_VERSION
 
 - Updated version in core script  
-- Auto-generated changelog from commits
+        - Changelog from commits
 - Ready for release"
 
 echo -e "${BLUE}🏷️  Creating git tag...${NC}"
