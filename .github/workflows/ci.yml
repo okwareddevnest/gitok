@@ -3,6 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ main, develop ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -56,6 +57,249 @@ jobs:
         echo "Testing version command..."
         gitok --version
         echo "✅ Basic functionality test passed"
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    name: Create Release
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Get version from tag
+      id: get_version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
+        
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        
+        # Create comprehensive release notes
+        cat > release_notes.md << 'EOF'
+        # 🚀 Gitok v$VERSION - Git CLI Productivity Boost
+        
+        Gitok supercharges your Git workflow with 35+ custom commands and aliases designed to make Git operations faster and more intuitive.
+        
+        ## ✨ Key Features
+        
+        ### 🔧 Core Git Operations
+        - **`commit "message"`** - Stage all changes and commit with message
+        - **`push`** - Push to current branch with safety checks
+        - **`pushall`** - Push to all configured remotes with rebase
+        - **`pull`** - Pull with automatic rebase
+        - **`status`** - Enhanced git status display
+        
+        ### 🌿 Branch Management
+        - **`branch <name>`** - Create and switch to new branch
+        - **`checkout <name>`** - Switch to existing branch
+        - **`branches`** - List all branches with details
+        - **`deletebranch <name>`** - Safely delete branch
+        
+        ### 📈 Advanced Features
+        - **`unpush`** - Safely undo last push (with confirmation)
+        - **`squashlast [N]`** - Squash last N commits
+        - **`graphlog`** - Beautiful commit history visualization
+        - **`makeignore <type>`** - Generate .gitignore templates
+        
+        ### 🛠️ Productivity Tools
+        - **`gitcheatsheet`** - Interactive command reference
+        - **`gitok --update`** - Auto-update to latest version
+        - **`gitok --version`** - Show version information
+        - **Safety confirmations** for destructive operations
+        
+        ## 📦 Installation
+        
+        ### 🐧 Linux & macOS
+        ```bash
+        bash <(curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh)
+        ```
+        
+        ### 🪟 Windows Users
+        
+        **Option 1: WSL (Recommended)**
+        ```powershell
+        wsl bash -c "curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh | bash"
+        ```
+        
+        **Option 2: Git Bash**
+        ```bash
+        bash <(curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh)
+        ```
+        
+        **Option 3: PowerShell (Run as Administrator)**
+        ```powershell
+        iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/okwareddevnest/gitok/main/install-windows.ps1'))
+        ```
+        
+        **Option 4: Download & Run Batch File**
+        Download: [install-windows.bat](https://raw.githubusercontent.com/okwareddevnest/gitok/main/install-windows.bat)
+        
+        ## ✅ Verify Installation
+        ```bash
+        # Restart your terminal or run:
+        source ~/.bashrc  # or source ~/.zshrc
+        
+        # Test installation
+        gitok --version
+        gitcheatsheet
+        ```
+        
+        ## 🔄 Updates
+        ```bash
+        # Auto-update to latest version
+        gitok --update
+        
+        # Check current version
+        gitok --version
+        ```
+        
+        ## 🚀 Quick Start
+        ```bash
+        # Initialize repo and make first commit
+        init
+        commit "Initial commit"
+        
+        # Create feature branch
+        branch feature/awesome-feature
+        commit "Add awesome feature"
+        
+        # Push to all remotes
+        pushall
+        
+        # View commit history
+        graphlog
+        
+        # See all commands
+        gitcheatsheet
+        ```
+        
+        ## 📋 Complete Command List
+        
+        ### Repository Management
+        - `init` - Initialize Git repository
+        - `clone <url>` - Clone repository
+        - `status` - Show repository status
+        
+        ### Staging & Commits
+        - `addall` - Stage all changes
+        - `commit "message"` - Stage all and commit
+        - `commitonly "message"` - Commit staged changes only
+        - `amendmsg "message"` - Amend last commit message
+        
+        ### Push & Pull Operations
+        - `push` - Push current branch
+        - `pushall` - Push to all remotes
+        - `pushnew` - Push new branch to remote
+        - `pull` - Pull with rebase
+        - `unpush` - Undo last push (⚠️ destructive)
+        - `trackremote` - Set upstream tracking
+        
+        ### Branch Operations
+        - `branch <name>` - Create and switch to branch
+        - `checkout <name>` - Switch to branch
+        - `branches` - List all branches
+        - `deletebranch <name>` - Delete branch safely
+        - `deletebranchf <name>` - Force delete branch
+        
+        ### History & Logs
+        - `graphlog` - Graphical commit history
+        - `last` - Show last commit
+        - `logfull` - Detailed commit history
+        - `diff` - Show changes
+        
+        ### Undo & Reset
+        - `resetsoft` - Soft reset to last commit
+        - `resethard` - Hard reset to last commit
+        - `revertlast` - Revert last commit
+        - `unstage` - Unstage changes
+        - `restore <file>` - Restore file
+        
+        ### Stash Operations
+        - `stash` - Stash current changes
+        - `pop` - Pop latest stash
+        
+        ### Cleanup & Tools
+        - `clean` - Clean untracked files
+        - `tracked` - Show tracked files
+        - `remotes` - Show remote repositories
+        - `squashlast [N]` - Squash last N commits
+        
+        ### File Management
+        - `ignore <pattern>` - Add to .gitignore
+        - `makeignore <type>` - Generate .gitignore template
+        
+        ### Help & Information
+        - `gitcheatsheet` - Interactive command reference
+        - `gitok --help` - Show help
+        - `gitok --version` - Show version
+        - `gitok --update` - Update to latest version
+        
+        ## 🔧 Technical Features
+        - **Cross-platform support** (Linux, macOS, Windows)
+        - **Automatic shell detection** (bash, zsh, fish)
+        - **Intelligent installation** with profile configuration
+        - **Auto-update system** with GitHub API integration
+        - **Safety confirmations** for destructive operations
+        - **Colorized output** for better readability
+        - **CI/CD integration** with automated testing
+        
+        ## 🛡️ Safety Features
+        - Confirmation prompts for destructive operations
+        - Automatic backups before major changes
+        - Dry-run options for testing commands
+        - Comprehensive error handling
+        
+        ## 🌟 What's New in v$VERSION
+        - GitHub API integration for reliable version checking
+        - Enhanced cross-platform compatibility
+        - Improved error handling and user feedback
+        - Comprehensive documentation and help system
+        - Automated CI/CD pipeline with testing
+        
+        ## 📚 Documentation
+        - **Repository**: https://github.com/okwareddevnest/gitok
+        - **Issues**: https://github.com/okwareddevnest/gitok/issues
+        - **Contributing**: See CONTRIBUTING.md
+        
+        ## 🤝 Support
+        - 📧 Email: softengdedan@gmail.com
+        - 🐛 Issues: https://github.com/okwareddevnest/gitok/issues
+        - 💬 Discussions: https://github.com/okwareddevnest/gitok/discussions
+        
+        ---
+        
+        **⭐ Star this repo if Gitok boosts your Git productivity!**
+        
+        Created with ❤️ by **Dedan Okware**
+        EOF
+        
+        # Replace version placeholders
+        sed -i "s/\$VERSION/$VERSION/g" release_notes.md
+        
+        # Set output for GitHub Actions
+        echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+        cat release_notes.md >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+        
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get_version.outputs.tag }}
+        release_name: "🚀 Gitok v${{ steps.get_version.outputs.version }} - Git CLI Productivity Boost"
+        body: ${{ env.RELEASE_NOTES }}
+        draft: false
+        prerelease: false
 
   version-and-release:
     needs: test
@@ -130,7 +374,7 @@ jobs:
         ./scripts/generate-changelog.sh changelog "$NEW_VERSION"
         echo "Generated changelog for v$NEW_VERSION"
         
-    - name: Commit version bump and changelog
+    - name: Create and push tag
       run: |
         NEW_VERSION="${{ steps.bump_version.outputs.new }}"
         git add VERSION .gitok.sh CHANGELOG.md
@@ -140,34 +384,13 @@ jobs:
         - Auto-generated changelog from commits
         - Ready for release"
         
-    - name: Push changes to main
-      run: |
-        # Configure git with the token
+        # Create tag
+        git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
+        
+        # Push changes and tag
         git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
         git push origin main
-        
-    - name: Generate release notes
-      id: release_notes
-      run: |
-        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
-        RELEASE_NOTES=$(./scripts/generate-changelog.sh release-notes "$NEW_VERSION")
-        echo "Generated release notes for v$NEW_VERSION"
-        # Save to environment variable for GitHub Actions
-        echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
-        echo "$RELEASE_NOTES" >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
-        
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v${{ steps.bump_version.outputs.new }}
-        release_name: Release v${{ steps.bump_version.outputs.new }}
-        body: ${{ env.RELEASE_NOTES }}
-        draft: false
-        prerelease: false
+        git push origin "v$NEW_VERSION"
 
   security-scan:
     runs-on: ubuntu-latest
@@ -182,4 +405,4 @@ jobs:
         echo "🔒 Running basic security checks..."
         # Check for common security issues in shell scripts
         grep -r "eval\|exec\|system" . --include="*.sh" || echo "No dangerous functions found"
-        echo "✅ Security scan completed" 
+        echo "✅ Security scan completed"
