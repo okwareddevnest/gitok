@@ -46,3 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ShellCheck integration for code quality assurance
 
 [1.0.0]: https://github.com/okwareddevnest/gitok/releases/tag/v1.0.0
+## [1.0.2] - 2025-07-07
+
+### 🐛 Fixed
+- Improve update mechanism with rate limit handling and fallback methods
+
+### 📝 Other Changes
+- 🔖 Bump version to v1.0.1
+
