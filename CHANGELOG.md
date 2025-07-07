@@ -60,3 +60,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 📝 Other Changes
 - Trigger: create missing v1.0.1 GitHub release [release]
 
+
+## [1.0.4] - 2025-07-07
+
+### 🐛 Fixed
+- Integrate release creation into version-and-release job [release]
+
