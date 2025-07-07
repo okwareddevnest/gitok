@@ -150,195 +150,114 @@ jobs:
         git push origin main
         git push origin "v$NEW_VERSION"
 
-    - name: Generate release notes
+    - name: Generate dynamic release notes
       id: release_notes
       run: |
         NEW_VERSION="${{ steps.bump_version.outputs.new }}"
         
-        # Create comprehensive release notes
-        cat > release_notes.md << 'EOF'
+        # Get the previous version for comparison
+        PREV_VERSION=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null | sed 's/^v//' || echo "1.0.0")
+        echo "Previous version: $PREV_VERSION"
+        echo "New version: $NEW_VERSION"
+        
+        # Get commits since last version
+        if git rev-parse "v$PREV_VERSION" >/dev/null 2>&1; then
+          COMMITS=$(git log --oneline "v$PREV_VERSION"..HEAD --pretty=format:"- %s" | head -20)
+        else
+          COMMITS=$(git log --oneline -10 --pretty=format:"- %s")
+        fi
+        
+        # Generate dynamic release notes
+        cat > release_notes.md << EOF
         # 🚀 Gitok v$NEW_VERSION - Git CLI Productivity Boost
         
         Gitok supercharges your Git workflow with 35+ custom commands and aliases designed to make Git operations faster and more intuitive.
         
-        ## ✨ Key Features
+        ## 🌟 What's New in v$NEW_VERSION
         
-        ### 🔧 Core Git Operations
-        - **`commit "message"`** - Stage all changes and commit with message
-        - **`push`** - Push to current branch with safety checks
-        - **`pushall`** - Push to all configured remotes with rebase
-        - **`pull`** - Pull with automatic rebase
-        - **`status`** - Enhanced git status display
+        ### 📝 Changes in this release:
+        $COMMITS
         
-        ### 🌿 Branch Management
-        - **`branch <name>`** - Create and switch to new branch
-        - **`checkout <name>`** - Switch to existing branch
-        - **`branches`** - List all branches with details
-        - **`deletebranch <name>`** - Safely delete branch
-        
-        ### 📈 Advanced Features
-        - **`unpush`** - Safely undo last push (with confirmation)
-        - **`squashlast [N]`** - Squash last N commits
-        - **`graphlog`** - Beautiful commit history visualization
-        - **`makeignore <type>`** - Generate .gitignore templates
-        
-        ### 🛠️ Productivity Tools
-        - **`gitcheatsheet`** - Interactive command reference
-        - **`gitok --update`** - Auto-update to latest version
-        - **`gitok --version`** - Show version information
-        - **Safety confirmations** for destructive operations
+        ### 🔧 Key Improvements:
+        - Enhanced GitHub Actions workflow with integrated release creation
+        - Improved update mechanism with better fallback handling for API rate limits
+        - Modern GitHub Actions integration using softprops/action-gh-release
+        - Streamlined CI/CD pipeline for automated releases
         
         ## 📦 Installation
         
         ### 🐧 Linux & macOS
-        ```bash
+        \`\`\`bash
         bash <(curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh)
-        ```
+        \`\`\`
         
         ### 🪟 Windows Users
         
         **Option 1: WSL (Recommended)**
-        ```powershell
+        \`\`\`powershell
         wsl bash -c "curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh | bash"
-        ```
+        \`\`\`
         
         **Option 2: Git Bash**
-        ```bash
+        \`\`\`bash
         bash <(curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh)
-        ```
+        \`\`\`
         
         **Option 3: PowerShell (Run as Administrator)**
-        ```powershell
+        \`\`\`powershell
         iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/okwareddevnest/gitok/main/install-windows.ps1'))
-        ```
-        
-        **Option 4: Download & Run Batch File**
-        Download: [install-windows.bat](https://raw.githubusercontent.com/okwareddevnest/gitok/main/install-windows.bat)
+        \`\`\`
         
         ## ✅ Verify Installation
-        ```bash
+        \`\`\`bash
         # Restart your terminal or run:
         source ~/.bashrc  # or source ~/.zshrc
         
         # Test installation
         gitok --version
         gitcheatsheet
-        ```
+        \`\`\`
         
         ## 🔄 Updates
-        ```bash
+        \`\`\`bash
         # Auto-update to latest version
         gitok --update
         
         # Check current version
         gitok --version
-        ```
+        \`\`\`
         
-        ## 🚀 Quick Start
-        ```bash
-        # Initialize repo and make first commit
-        init
-        commit "Initial commit"
+        ## 🚀 35+ Git Commands Available
         
-        # Create feature branch
-        branch feature/awesome-feature
-        commit "Add awesome feature"
+        ### 🔧 Core Operations
+        - \`commit "message"\` - Stage all and commit
+        - \`push\` / \`pushall\` - Push to remote(s)
+        - \`pull\` - Pull with rebase
+        - \`status\` - Enhanced git status
         
-        # Push to all remotes
-        pushall
+        ### 🌿 Branch Management
+        - \`branch <name>\` - Create and switch
+        - \`checkout <name>\` - Switch branches
+        - \`branches\` - List all branches
+        - \`deletebranch <name>\` - Safe deletion
         
-        # View commit history
-        graphlog
-        
-        # See all commands
-        gitcheatsheet
-        ```
-        
-        ## 📋 Complete Command List
-        
-        ### Repository Management
-        - `init` - Initialize Git repository
-        - `clone <url>` - Clone repository
-        - `status` - Show repository status
-        
-        ### Staging & Commits
-        - `addall` - Stage all changes
-        - `commit "message"` - Stage all and commit
-        - `commitonly "message"` - Commit staged changes only
-        - `amendmsg "message"` - Amend last commit message
-        
-        ### Push & Pull Operations
-        - `push` - Push current branch
-        - `pushall` - Push to all remotes
-        - `pushnew` - Push new branch to remote
-        - `pull` - Pull with rebase
-        - `unpush` - Undo last push (⚠️ destructive)
-        - `trackremote` - Set upstream tracking
-        
-        ### Branch Operations
-        - `branch <name>` - Create and switch to branch
-        - `checkout <name>` - Switch to branch
-        - `branches` - List all branches
-        - `deletebranch <name>` - Delete branch safely
-        - `deletebranchf <name>` - Force delete branch
-        
-        ### History & Logs
-        - `graphlog` - Graphical commit history
-        - `last` - Show last commit
-        - `logfull` - Detailed commit history
-        - `diff` - Show changes
-        
-        ### Undo & Reset
-        - `resetsoft` - Soft reset to last commit
-        - `resethard` - Hard reset to last commit
-        - `revertlast` - Revert last commit
-        - `unstage` - Unstage changes
-        - `restore <file>` - Restore file
-        
-        ### Stash Operations
-        - `stash` - Stash current changes
-        - `pop` - Pop latest stash
-        
-        ### Cleanup & Tools
-        - `clean` - Clean untracked files
-        - `tracked` - Show tracked files
-        - `remotes` - Show remote repositories
-        - `squashlast [N]` - Squash last N commits
-        
-        ### File Management
-        - `ignore <pattern>` - Add to .gitignore
-        - `makeignore <type>` - Generate .gitignore template
-        
-        ### Help & Information
-        - `gitcheatsheet` - Interactive command reference
-        - `gitok --help` - Show help
-        - `gitok --version` - Show version
-        - `gitok --update` - Update to latest version
+        ### 📈 Advanced Features
+        - \`unpush\` - Undo last push (with confirmation)
+        - \`squashlast [N]\` - Squash commits
+        - \`graphlog\` - Visual commit history
+        - \`gitcheatsheet\` - Interactive help
         
         ## 🔧 Technical Features
         - **Cross-platform support** (Linux, macOS, Windows)
         - **Automatic shell detection** (bash, zsh, fish)
-        - **Intelligent installation** with profile configuration
         - **Auto-update system** with GitHub API integration
         - **Safety confirmations** for destructive operations
-        - **Colorized output** for better readability
-        - **CI/CD integration** with automated testing
+        - **Comprehensive error handling** and fallback mechanisms
         
-        ## 🛡️ Safety Features
-        - Confirmation prompts for destructive operations
-        - Automatic backups before major changes
-        - Dry-run options for testing commands
-        - Comprehensive error handling
-        
-        ## 📚 Documentation
+        ## 📚 Links
         - **Repository**: https://github.com/okwareddevnest/gitok
         - **Issues**: https://github.com/okwareddevnest/gitok/issues
-        - **Contributing**: See CONTRIBUTING.md
-        
-        ## 🤝 Support
-        - 📧 Email: softengdedan@gmail.com
-        - 🐛 Issues: https://github.com/okwareddevnest/gitok/issues
-        - 💬 Discussions: https://github.com/okwareddevnest/gitok/discussions
+        - **Install Guide**: See installation options above
         
         ---
         
@@ -346,9 +265,6 @@ jobs:
         
         Created with ❤️ by **Dedan Okware**
         EOF
-        
-        # Replace version placeholders
-        sed -i "s/\$NEW_VERSION/$NEW_VERSION/g" release_notes.md
         
         # Set output for GitHub Actions
         echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
