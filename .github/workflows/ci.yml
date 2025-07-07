@@ -58,34 +58,106 @@ jobs:
         gitok --version
         echo "✅ Basic functionality test passed"
 
-  release:
+
+  version-and-release:
     needs: test
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    name: Create Release
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]'))
+    permissions:
+      contents: write
+      pull-requests: write
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
+        token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
+        persist-credentials: true
         
-    - name: Get version from tag
-      id: get_version
+    - name: Configure Git
       run: |
-        VERSION=${GITHUB_REF#refs/tags/v}
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-        echo "Version: $VERSION"
+        git config --global user.email "action@github.com"
+        git config --global user.name "GitHub Action"
+        git config --global init.defaultBranch main
         
+    - name: Get current version
+      id: current_version
+      run: |
+        CURRENT_VERSION=$(cat VERSION)
+        echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $CURRENT_VERSION"
+        
+    - name: Bump version
+      id: bump_version
+      run: |
+        CURRENT_VERSION="${{ steps.current_version.outputs.current }}"
+        BUMP_TYPE="${{ github.event.inputs.version_bump || 'patch' }}"
+        
+        IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+        MAJOR=${VERSION_PARTS[0]}
+        MINOR=${VERSION_PARTS[1]}
+        PATCH=${VERSION_PARTS[2]}
+        
+        case $BUMP_TYPE in
+          major)
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+            ;;
+          minor)
+            MINOR=$((MINOR + 1))
+            PATCH=0
+            ;;
+          patch)
+            PATCH=$((PATCH + 1))
+            ;;
+        esac
+        
+        NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+        echo "$NEW_VERSION" > VERSION
+        echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "New version: $NEW_VERSION"
+        
+    - name: Update version in script
+      run: |
+        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
+        sed -i "s/GITOK_VERSION=\".*\"/GITOK_VERSION=\"$NEW_VERSION\"/" .gitok.sh
+        echo "Updated version in .gitok.sh to $NEW_VERSION"
+        
+    - name: Generate dynamic changelog
+      run: |
+        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
+        chmod +x scripts/generate-changelog.sh
+        ./scripts/generate-changelog.sh changelog "$NEW_VERSION"
+        echo "Generated changelog for v$NEW_VERSION"
+        
+    - name: Create and push tag
+      run: |
+        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
+        git add VERSION .gitok.sh CHANGELOG.md
+        git commit -m "🔖 Bump version to v$NEW_VERSION
+
+        - Updated version in core script
+        - Auto-generated changelog from commits
+        - Ready for release"
+        
+        # Create tag
+        git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
+        
+        # Push changes and tag
+        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+        git push origin main
+        git push origin "v$NEW_VERSION"
+
     - name: Generate release notes
       id: release_notes
       run: |
-        VERSION="${{ steps.get_version.outputs.version }}"
+        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
         
         # Create comprehensive release notes
         cat > release_notes.md << 'EOF'
-        # 🚀 Gitok v$VERSION - Git CLI Productivity Boost
+        # 🚀 Gitok v$NEW_VERSION - Git CLI Productivity Boost
         
         Gitok supercharges your Git workflow with 35+ custom commands and aliases designed to make Git operations faster and more intuitive.
         
@@ -258,13 +330,6 @@ jobs:
         - Dry-run options for testing commands
         - Comprehensive error handling
         
-        ## 🌟 What's New in v$VERSION
-        - GitHub API integration for reliable version checking
-        - Enhanced cross-platform compatibility
-        - Improved error handling and user feedback
-        - Comprehensive documentation and help system
-        - Automated CI/CD pipeline with testing
-        
         ## 📚 Documentation
         - **Repository**: https://github.com/okwareddevnest/gitok
         - **Issues**: https://github.com/okwareddevnest/gitok/issues
@@ -283,114 +348,23 @@ jobs:
         EOF
         
         # Replace version placeholders
-        sed -i "s/\$VERSION/$VERSION/g" release_notes.md
+        sed -i "s/\$NEW_VERSION/$NEW_VERSION/g" release_notes.md
         
         # Set output for GitHub Actions
         echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
         cat release_notes.md >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
-        
+
     - name: Create Release
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.get_version.outputs.tag }}
-        release_name: "🚀 Gitok v${{ steps.get_version.outputs.version }} - Git CLI Productivity Boost"
+        tag_name: v${{ steps.bump_version.outputs.new }}
+        name: "🚀 Gitok v${{ steps.bump_version.outputs.new }} - Git CLI Productivity Boost"
         body: ${{ env.RELEASE_NOTES }}
         draft: false
         prerelease: false
-
-  version-and-release:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]'))
-    permissions:
-      contents: write
-      pull-requests: write
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        fetch-depth: 0
-        persist-credentials: true
-        
-    - name: Configure Git
-      run: |
-        git config --global user.email "action@github.com"
-        git config --global user.name "GitHub Action"
-        git config --global init.defaultBranch main
-        
-    - name: Get current version
-      id: current_version
-      run: |
-        CURRENT_VERSION=$(cat VERSION)
-        echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-        echo "Current version: $CURRENT_VERSION"
-        
-    - name: Bump version
-      id: bump_version
-      run: |
-        CURRENT_VERSION="${{ steps.current_version.outputs.current }}"
-        BUMP_TYPE="${{ github.event.inputs.version_bump || 'patch' }}"
-        
-        IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
-        MAJOR=${VERSION_PARTS[0]}
-        MINOR=${VERSION_PARTS[1]}
-        PATCH=${VERSION_PARTS[2]}
-        
-        case $BUMP_TYPE in
-          major)
-            MAJOR=$((MAJOR + 1))
-            MINOR=0
-            PATCH=0
-            ;;
-          minor)
-            MINOR=$((MINOR + 1))
-            PATCH=0
-            ;;
-          patch)
-            PATCH=$((PATCH + 1))
-            ;;
-        esac
-        
-        NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-        echo "$NEW_VERSION" > VERSION
-        echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
-        echo "New version: $NEW_VERSION"
-        
-    - name: Update version in script
-      run: |
-        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
-        sed -i "s/GITOK_VERSION=\".*\"/GITOK_VERSION=\"$NEW_VERSION\"/" .gitok.sh
-        echo "Updated version in .gitok.sh to $NEW_VERSION"
-        
-    - name: Generate dynamic changelog
-      run: |
-        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
-        chmod +x scripts/generate-changelog.sh
-        ./scripts/generate-changelog.sh changelog "$NEW_VERSION"
-        echo "Generated changelog for v$NEW_VERSION"
-        
-    - name: Create and push tag
-      run: |
-        NEW_VERSION="${{ steps.bump_version.outputs.new }}"
-        git add VERSION .gitok.sh CHANGELOG.md
-        git commit -m "🔖 Bump version to v$NEW_VERSION
-
-        - Updated version in core script
-        - Auto-generated changelog from commits
-        - Ready for release"
-        
-        # Create tag
-        git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
-        
-        # Push changes and tag
-        git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-        git push origin main
-        git push origin "v$NEW_VERSION"
 
   security-scan:
     runs-on: ubuntu-latest
