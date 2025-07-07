@@ -38,11 +38,29 @@ function gitok() {
 function gitok_update() {
   echo "🔄 Checking for Gitok updates..."
   
-  # Get latest version from GitHub API (more reliable than CDN)
+  # Try GitHub API first (more reliable than CDN)
   LATEST_VERSION=$(curl -s "https://api.github.com/repos/okwareddevnest/gitok/contents/VERSION" 2>/dev/null | grep '"content"' | cut -d'"' -f4 | base64 -d 2>/dev/null)
   
+  # If API fails (rate limit or network), try fallback methods
   if [ -z "$LATEST_VERSION" ]; then
-    echo "❌ Failed to check for updates. Please check your internet connection."
+    echo "⚠️  GitHub API unavailable (rate limit or network issue). Trying fallback method..."
+    
+    # Fallback 1: Try raw GitHub content
+    LATEST_VERSION=$(curl -s "https://raw.githubusercontent.com/okwareddevnest/gitok/main/VERSION" 2>/dev/null | tr -d '[:space:]')
+    
+    # Fallback 2: Try git ls-remote to get latest tag
+    if [ -z "$LATEST_VERSION" ]; then
+      echo "⚠️  Raw content unavailable. Trying git method..."
+      LATEST_VERSION=$(git ls-remote --tags --sort='-v:refname' https://github.com/okwareddevnest/gitok.git 2>/dev/null | head -n1 | grep -o 'v[0-9.]*' | sed 's/v//' 2>/dev/null)
+    fi
+  fi
+  
+  if [ -z "$LATEST_VERSION" ]; then
+    echo "❌ Failed to check for updates. All methods failed:"
+    echo "   • GitHub API may be rate limited"
+    echo "   • Raw content unavailable"
+    echo "   • Git remote access failed"
+    echo "   • Check your internet connection"
     return 1
   fi
   
@@ -52,6 +70,16 @@ function gitok_update() {
   if [ "$LATEST_VERSION" = "$GITOK_VERSION" ]; then
     echo "✅ You already have the latest version (v$GITOK_VERSION)"
     return 0
+  fi
+  
+  # Check if current version is newer than remote (development scenario)
+  if command -v sort >/dev/null 2>&1; then
+    NEWER_VERSION=$(printf '%s\n%s' "$GITOK_VERSION" "$LATEST_VERSION" | sort -V | tail -n1)
+    if [ "$NEWER_VERSION" = "$GITOK_VERSION" ]; then
+      echo "✅ You have a newer version (v$GITOK_VERSION) than remote (v$LATEST_VERSION)"
+      echo "   This may be a development version."
+      return 0
+    fi
   fi
   
   echo "🆕 New version available: v$LATEST_VERSION (current: v$GITOK_VERSION)"
