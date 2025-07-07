@@ -66,3 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🐛 Fixed
 - Integrate release creation into version-and-release job [release]
 
+
+## [1.0.5] - 2025-07-07
+
+### ✨ Added
+- Implement dynamic release notes generation [release]
+
