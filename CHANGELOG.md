@@ -72,3 +72,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### ✨ Added
 - Implement dynamic release notes generation [release]
 
+
+## [1.1.0] - 2025-07-11
+
+### ✨ Added
+- Implement dynamic release notes generation [release]
+
+### 📝 Other Changes
+- 🔖 Bump version to v1.0.5
+

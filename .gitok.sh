@@ -3,7 +3,7 @@
 # Created by Dedan Okware
 
 # Gitok Configuration
-GITOK_VERSION="1.0.5"
+GITOK_VERSION="1.1.0"
 GITOK_REPO="https://raw.githubusercontent.com/okwareddevnest/gitok/main"
 GITOK_SCRIPT_PATH="$HOME/.gitok.sh"
 
@@ -337,6 +337,51 @@ function pushnew() {
   echo "✅ Repo published to: $REMOTE_URL"
 }
 
+function ghauth() {
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "❌ GitHub CLI (gh) is required. Install from https://cli.github.com/"
+    return 1
+  fi
+  gh auth login
+  echo "✅ Authenticated with GitHub"
+}
+
+function newrepo() {
+  if [ -z "$1" ]; then
+    echo "❌ Usage: newrepo <repository-name> [--private]"
+    return 1
+  fi
+  local repo_name="$1"
+  local visibility="--public"
+  if [ "$2" = "--private" ]; then
+    visibility="--private"
+  fi
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "❌ GitHub CLI (gh) is required. Install from https://cli.github.com/"
+    return 1
+  fi
+  if ! gh auth status >/dev/null 2>&1; then
+    echo "🔑 Not authenticated with GitHub. Running login..."
+    ghauth
+    if ! gh auth status >/dev/null 2>&1; then
+      echo "❌ Authentication failed"
+      return 1
+    fi
+  fi
+  if [ -d "$repo_name" ]; then
+    echo "❌ Directory '$repo_name' already exists"
+    return 1
+  fi
+  mkdir "$repo_name"
+  cd "$repo_name" || return 1
+  init
+  echo "# $repo_name" > README.md
+  commit "Initial commit"
+  gh repo create "$repo_name" $visibility --source=. --push
+  echo "✅ Repository '$repo_name' created locally and on GitHub"
+  echo "🌐 URL: https://github.com/$(gh api user --jq .login)/$repo_name"
+}
+
 # Display Git aliases cheatsheet
 function gitcheatsheet() {
   echo ""
@@ -348,6 +393,8 @@ function gitcheatsheet() {
   echo "📂 REPOSITORY MANAGEMENT"
   echo "  clone <url>           Clone a repository"
   echo "  init                  Initialize a new git repo"
+  echo "  newrepo <name> [--private] Create new repo locally and on GitHub"
+  echo "  ghauth                Authenticate with GitHub"
   echo "  status                Show git status"
   echo ""
   echo "📝 STAGING & COMMITS"
