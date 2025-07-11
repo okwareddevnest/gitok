@@ -72,3 +72,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### ✨ Added
 - Implement dynamic release notes generation [release]
 
+
+## [2.0.0] - 2025-07-11
+
+### 📝 Other Changes
+- 🚀 MAJOR RELEASE: Transform GitOK into Advanced GitHub Project Management Platform [release]
+
