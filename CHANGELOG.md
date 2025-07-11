@@ -78,3 +78,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 📝 Other Changes
 - 🚀 MAJOR RELEASE: Transform GitOK into Advanced GitHub Project Management Platform [release]
 
+
+## [2.0.1] - 2025-07-11
+
+### 🚀 Improved
+- 🔧 Enhanced project board management
+
+### 📝 Other Changes
+- 🔧 Complete GitHub Projects v2 migration
+
