@@ -1,0 +1,164 @@
+name: 🚀 Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: Create Release
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Get tag info
+      id: tag_info
+      run: |
+        TAG_NAME=${GITHUB_REF#refs/tags/}
+        VERSION=${TAG_NAME#v}
+        echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Tag: $TAG_NAME, Version: $VERSION"
+        
+    - name: Get previous tag
+      id: prev_tag
+      run: |
+        # Get the previous tag
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+        echo "prev_tag=$PREV_TAG" >> $GITHUB_OUTPUT
+        echo "Previous tag: $PREV_TAG"
+        
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        TAG_NAME="${{ steps.tag_info.outputs.tag_name }}"
+        VERSION="${{ steps.tag_info.outputs.version }}"
+        PREV_TAG="${{ steps.prev_tag.outputs.prev_tag }}"
+        
+        # Get commits since last tag
+        if [ -n "$PREV_TAG" ] && git rev-parse "$PREV_TAG" >/dev/null 2>&1; then
+          COMMITS=$(git log --oneline "$PREV_TAG"..HEAD --pretty=format:"- %s" | head -20)
+          COMPARISON_INFO="Changes since $PREV_TAG:"
+        else
+          COMMITS=$(git log --oneline -10 --pretty=format:"- %s")
+          COMPARISON_INFO="Recent changes:"
+        fi
+        
+        # Generate release notes as environment variable
+        {
+          echo "RELEASE_NOTES<<EOF"
+          echo "# 🚀 GitOK $TAG_NAME - Git CLI Productivity Boost"
+          echo ""
+          echo "GitOK supercharges your Git workflow with 35+ custom commands and aliases designed to make Git operations faster and more intuitive."
+          echo ""
+          echo "## 🌟 What's New in $TAG_NAME"
+          echo ""
+          echo "### 📝 $COMPARISON_INFO"
+          echo "$COMMITS"
+          echo ""
+          echo "### 🔧 Key Features:"
+          echo "- **Advanced GitHub Project Management**: Real-time sync, collaboration tools, AI analytics"
+          echo "- **Professional Templates**: Software development, marketing campaigns, product launches"
+          echo "- **Automation Workflows**: Rules setup, issue/PR templates, GitHub Actions integration"
+          echo "- **Enhanced Git Operations**: 35+ streamlined commands with safety confirmations"
+          echo "- **Cross-platform Support**: Linux, macOS, Windows with auto-detection"
+          echo ""
+          echo "## 📦 Installation"
+          echo ""
+          echo "### 🐧 Linux & macOS"
+          echo "\`\`\`bash"
+          echo "bash <(curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh)"
+          echo "\`\`\`"
+          echo ""
+          echo "### 🪟 Windows Users"
+          echo ""
+          echo "**Option 1: WSL (Recommended)**"
+          echo "\`\`\`powershell"
+          echo "wsl bash -c \"curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh | bash\""
+          echo "\`\`\`"
+          echo ""
+          echo "**Option 2: Git Bash**"
+          echo "\`\`\`bash"
+          echo "bash <(curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh)"
+          echo "\`\`\`"
+          echo ""
+          echo "**Option 3: PowerShell (Run as Administrator)**"
+          echo "\`\`\`powershell"
+          echo "iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/okwareddevnest/gitok/main/install-windows.ps1'))"
+          echo "\`\`\`"
+          echo ""
+          echo "## ✅ Verify Installation"
+          echo "\`\`\`bash"
+          echo "# Restart your terminal or run:"
+          echo "source ~/.bashrc  # or source ~/.zshrc"
+          echo ""
+          echo "# Test installation"
+          echo "gitok --version"
+          echo "gitcheatsheet"
+          echo "\`\`\`"
+          echo ""
+          echo "## 🚀 35+ Git Commands Available"
+          echo ""
+          echo "### 🔧 Core Operations"
+          echo "- \`commit \"message\"\` - Stage all and commit"
+          echo "- \`push\` / \`pushall\` - Push to remote(s)"
+          echo "- \`pull\` - Pull with rebase"
+          echo "- \`status\` - Enhanced git status"
+          echo ""
+          echo "### 🌿 Branch Management"
+          echo "- \`branch <name>\` - Create and switch"
+          echo "- \`checkout <name>\` - Switch branches"
+          echo "- \`branches\` - List all branches"
+          echo "- \`deletebranch <name>\` - Safe deletion"
+          echo ""
+          echo "### 📈 Advanced Features"
+          echo "- \`unpush\` - Undo last push (with confirmation)"
+          echo "- \`squashlast [N]\` - Squash commits"
+          echo "- \`graphlog\` - Visual commit history"
+          echo "- \`gitcheatsheet\` - Interactive help"
+          echo ""
+          echo "### 🎯 GitHub Project Management"
+          echo "- \`syncproject\` - Real-time project board synchronization"
+          echo "- \`collaborate\` - Team collaboration and activity tracking"
+          echo "- \`automate\` - Workflow automation and templates"
+          echo "- \`analytics\` - AI-powered project analytics"
+          echo "- \`template\` - Professional project templates"
+          echo ""
+          echo "## 🔧 Technical Features"
+          echo "- **Cross-platform support** (Linux, macOS, Windows)"
+          echo "- **Automatic shell detection** (bash, zsh, fish)"
+          echo "- **Auto-update system** with GitHub API integration"
+          echo "- **Safety confirmations** for destructive operations"
+          echo "- **Comprehensive error handling** and fallback mechanisms"
+          echo "- **Real-time GitHub integration** with GraphQL API"
+          echo "- **AI-powered analytics** and insights"
+          echo ""
+          echo "## 📚 Links"
+          echo "- **Repository**: https://github.com/okwareddevnest/gitok"
+          echo "- **Issues**: https://github.com/okwareddevnest/gitok/issues"
+          echo "- **Install Guide**: See installation options above"
+          echo ""
+          echo "**⭐ Star this repo if GitOK boosts your Git productivity!**"
+          echo ""
+          echo "Created with ❤️ by **Dedan Okware**"
+          echo "EOF"
+        } >> $GITHUB_ENV
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag_info.outputs.tag_name }}
+        name: "🚀 GitOK ${{ steps.tag_info.outputs.tag_name }} - Git CLI Productivity Boost"
+        body: ${{ env.RELEASE_NOTES }}
+        draft: false
+        prerelease: false
+        generate_release_notes: true 
