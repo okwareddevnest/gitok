@@ -1,6 +1,6 @@
-# Gitok Scripts
+# GitOK Scripts
 
-This directory contains utility scripts for managing Gitok versions and releases.
+This directory contains utility scripts for managing GitOK versions and releases.
 
 ## 📋 Available Scripts
 

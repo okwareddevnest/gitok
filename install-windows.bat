@@ -1,12 +1,12 @@
 @echo off
-REM Gitok Windows Installation Script
-REM Double-click this file to install Gitok on Windows
+REM GitOK Windows Installation Script
+REM Double-click this file to install GitOK on Windows
 
 setlocal enabledelayedexpansion
 
 echo.
 echo ===============================================
-echo    Gitok Installation for Windows
+echo    GitOK Installation for Windows
 echo    by Dedan Okware
 echo ===============================================
 echo.
@@ -48,10 +48,10 @@ if !errorLevel! equ 0 (
     REM Test if WSL is working
     wsl echo test >nul 2>&1
     if !errorLevel! equ 0 (
-        echo [INFO] Installing Gitok in WSL...
+        echo [INFO] Installing GitOK in WSL...
         wsl bash -c "curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh | bash"
         if !errorLevel! equ 0 (
-            echo [SUCCESS] Gitok installed in WSL!
+            echo [SUCCESS] GitOK installed in WSL!
             
             REM Test WSL installation
             for /f "delims=" %%i in ('wsl bash -c "source ~/.gitok.sh && gitok --version" 2^>nul') do set "wslVersion=%%i"
@@ -85,10 +85,10 @@ if defined gitBashPath (
     echo [OK] Git Bash detected at: !gitBashPath!
     
     REM Download gitok
-    echo [INFO] Downloading Gitok...
+    echo [INFO] Downloading GitOK...
     "!gitBashPath!" -c "curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/.gitok.sh -o ~/.gitok.sh && chmod +x ~/.gitok.sh"
     if !errorLevel! equ 0 (
-        echo [SUCCESS] Gitok downloaded successfully
+        echo [SUCCESS] GitOK downloaded successfully
         
         REM Configure shell profiles
         echo [INFO] Configuring shell profiles...
@@ -100,7 +100,7 @@ if defined gitBashPath (
                     echo 'Created %%p'
                 elif ! grep -q 'source.*\.gitok\.sh' $profile; then
                     echo '' >> $profile
-                    echo '# Gitok - Git CLI Aliases' >> $profile
+                    echo '# GitOK - GitOK' >> $profile
                     echo 'source ~/.gitok.sh' >> $profile
                     echo 'Added to %%p'
                 else
@@ -127,7 +127,7 @@ if defined gitBashPath (
             set "installationSuccess=true"
         )
     ) else (
-        echo [ERROR] Failed to download Gitok
+        echo [ERROR] Failed to download GitOK
     )
 ) else (
     echo [WARNING] Git Bash not found
@@ -140,9 +140,9 @@ if "!installationSuccess!"=="true" (
     echo Installation completed successfully!
     echo ===============================================
     echo.
-    echo [SUCCESS] Gitok is now installed and configured!
+    echo [SUCCESS] GitOK is now installed and configured!
     echo.
-    echo How to use Gitok:
+    echo How to use GitOK:
     echo.
     
     REM Check what's available and show appropriate instructions
@@ -170,7 +170,7 @@ if "!installationSuccess!"=="true" (
     echo   gitok --version      - Check version
     echo   gitcheatsheet        - View all commands
     echo   gitok --help         - Get help
-    echo   gitok --update       - Update Gitok
+    echo   gitok --update       - Update GitOK
     echo.
     echo Profiles updated: !profilesUpdated!
     
@@ -178,9 +178,9 @@ if "!installationSuccess!"=="true" (
     echo Installation failed
     echo ===============================================
     echo.
-    echo [ERROR] Could not install Gitok
+    echo [ERROR] Could not install GitOK
     echo.
-    echo To use Gitok on Windows, you need one of:
+    echo To use GitOK on Windows, you need one of:
     echo.
     echo 1. Windows Subsystem for Linux ^(WSL^) - Recommended
     echo    Install: wsl --install

@@ -1,8 +1,8 @@
-# Gitok for Windows Users
+# GitOK for Windows Users
 
 ## 🪟 Windows Installation Guide
 
-Gitok fully supports Windows through multiple installation methods. Choose the one that works best for your setup.
+GitOK fully supports Windows through multiple installation methods. Choose the one that works best for your setup.
 
 ## 📋 Prerequisites
 
@@ -27,7 +27,7 @@ wsl --install
 
 # 2. Restart your computer
 
-# 3. Install Gitok in WSL
+# 3. Install GitOK in WSL
 wsl bash -c "curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh | bash"
 
 # 4. Test installation
@@ -39,7 +39,7 @@ wsl gitok --version
 # Enter WSL environment
 wsl
 
-# Use Gitok normally
+# Use GitOK normally
 gitok --version
 gitcheatsheet
 commit "your message"
@@ -60,7 +60,7 @@ source ~/.bashrc
 
 **Usage in Git Bash:**
 - Open Git Bash terminal
-- Use all Gitok commands normally
+- Use all GitOK commands normally
 - Works in any directory with Git repositories
 
 ### Method 3: Automated Windows Installer
@@ -108,7 +108,7 @@ wsl --install
 - Curl is included in recent Git for Windows installations
 
 ### Commands not working in PowerShell/CMD
-- Gitok is designed for bash environments
+- GitOK is designed for bash environments
 - Use WSL or Git Bash for best experience
 - PowerShell equivalents may be added in future versions
 
@@ -119,7 +119,7 @@ wsl --install
 # In WSL terminal
 code .  # Opens current directory in VS Code
 
-# Use Gitok commands in VS Code terminal
+# Use GitOK commands in VS Code terminal
 commit "VS Code integration working"
 push
 ```
@@ -138,7 +138,7 @@ push
 1. **Install using your preferred method**
 2. **Open your terminal** (WSL, Git Bash, or PowerShell)
 3. **Navigate to a Git repository**
-4. **Test Gitok:**
+4. **Test GitOK:**
    ```bash
    gitok --version
    gitcheatsheet
@@ -150,7 +150,7 @@ push
    push
    ```
 
-## 🔄 Updating Gitok on Windows
+## 🔄 Updating GitOK on Windows
 
 ```bash
 # Works in all environments

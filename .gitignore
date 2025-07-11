@@ -39,3 +39,6 @@ local_test*
 # Environment specific
 .env
 .env.local 
+
+.claude/
+CLAUDE.md

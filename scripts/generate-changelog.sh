@@ -1,6 +1,6 @@
 #!/bin/bash
-# Changelog generation script for Gitok
-# Release notes and changelog generator for Gitok
+# Changelog generation script for GitOK
+# Release notes and changelog generator for GitOK
 
 set -e
 
@@ -216,7 +216,7 @@ generate_release_notes() {
     local version="$1"
     local previous_tag="$2"
     
-    echo "## 🚀 Gitok $version"
+    echo "## 🚀 GitOK $version"
     echo ""
     
     # Get commits since last tag

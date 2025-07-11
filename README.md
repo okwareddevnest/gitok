@@ -1,6 +1,6 @@
-# Gitok – Git CLI Aliases by Dedan Okware
+# GitOK – GitOK by Dedan Okware
 
-Gitok is a productivity boost for developers. It includes 35+ custom Git commands and functions like `commit`, `pushall`, `unpush`, `gitcheatsheet`, and now features **automatic updates** and **semantic versioning**.
+GitOK is a productivity boost for developers. It includes 35+ custom Git commands and functions like `commit`, `pushall`, `unpush`, `gitcheatsheet`, and now features **automatic updates** and **semantic versioning**.
 
 ## ✨ Features
 
@@ -27,7 +27,7 @@ bash <(curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/inst
 # Install WSL if not already installed
 wsl --install
 
-# After restart, install Gitok in WSL
+# After restart, install GitOK in WSL
 wsl bash -c "curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh | bash"
 ```
 
@@ -159,4 +159,4 @@ Apache License - see [LICENSE](LICENSE) file for details.
 Created by **Dedan Okware** - softengdedan@gmail.com
 
 ---
-⭐ **Star this repo** if Gitok helps boost your Git productivity!
+⭐ **Star this repo** if GitOK helps boost your Git productivity!

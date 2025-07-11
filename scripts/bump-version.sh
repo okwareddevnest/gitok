@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version management script for Gitok
+# Version management script for GitOK
 # Usage: ./scripts/bump-version.sh [major|minor|patch]
 
 set -e

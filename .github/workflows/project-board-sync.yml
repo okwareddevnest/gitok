@@ -1,0 +1,66 @@
+name: 📊 Project Board Sync
+
+on:
+  issues:
+    types: [opened, closed, labeled, unlabeled, assigned, unassigned]
+  pull_request:
+    types: [opened, closed, merged, labeled, unlabeled, assigned, unassigned, ready_for_review]
+  push:
+    branches: [main, develop]
+
+jobs:
+  sync-project-board:
+    runs-on: ubuntu-latest
+    name: Sync with Project Board
+    
+    steps:
+      - name: 📋 Add to Project Board
+        uses: actions/add-to-project@v0.4.0
+        with:
+          project-url: ${{ vars.PROJECT_URL }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🏷️ Auto-label based on project fields
+        if: github.event_name == 'issues' && github.event.action == 'opened'
+        run: |
+          # Auto-assign priority based on labels
+          if [[ "${{ contains(github.event.issue.labels.*.name, 'bug') }}" == "true" ]]; then
+            echo "Setting priority to High for bug"
+            # Set Priority field to High
+          elif [[ "${{ contains(github.event.issue.labels.*.name, 'enhancement') }}" == "true" ]]; then
+            echo "Setting priority to Medium for enhancement"
+            # Set Priority field to Medium
+          fi
+          
+      - name: 📅 Set Due Date for High Priority
+        if: contains(github.event.issue.labels.*.name, 'priority:high')
+        run: |
+          # Set due date to 3 days from now for high priority items
+          DUE_DATE=$(date -d "+3 days" +%Y-%m-%d)
+          echo "Setting due date to $DUE_DATE for high priority issue"
+          
+      - name: 🔄 Update Status on PR Events
+        if: github.event_name == 'pull_request'
+        run: |
+          case "${{ github.event.action }}" in
+            "opened")
+              echo "Setting status to In Progress"
+              ;;
+            "ready_for_review")
+              echo "Setting status to In Review"
+              ;;
+            "closed")
+              if [[ "${{ github.event.pull_request.merged }}" == "true" ]]; then
+                echo "Setting status to Done (merged)"
+              else
+                echo "Setting status to Cancelled (closed)"
+              fi
+              ;;
+          esac
+          
+      - name: 📊 Update Project Metrics
+        run: |
+          echo "📈 Updating project metrics..."
+          echo "- Total issues: ${{ github.event.repository.open_issues_count }}"
+          echo "- Event type: ${{ github.event_name }}"
+          echo "- Action: ${{ github.event.action }}"

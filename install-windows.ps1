@@ -1,7 +1,7 @@
-# PowerShell installation script for Gitok on Windows
+# PowerShell installation script for GitOK on Windows
 # Run this in PowerShell as Administrator or with appropriate permissions
 
-Write-Host "🔧 Installing Gitok for Windows by Dedan Okware..." -ForegroundColor Cyan
+Write-Host "🔧 Installing GitOK for Windows by Dedan Okware..." -ForegroundColor Cyan
 
 # Helper function for profile management
 function Add-ToProfile {
@@ -28,12 +28,12 @@ function Add-ToProfile {
     $hasGitok = $content | Where-Object { $_ -match "source.*\.gitok\.sh|\..*\.gitok\.sh" }
     
     if (-not $hasGitok) {
-        Add-Content $ProfilePath "`n# Gitok - Git CLI Aliases"
+        Add-Content $ProfilePath "`n# GitOK - GitOK"
         Add-Content $ProfilePath $Command
-        Write-Host "✅ Added Gitok to $ProfileName" -ForegroundColor Green
+        Write-Host "✅ Added GitOK to $ProfileName" -ForegroundColor Green
         return $true
     } else {
-        Write-Host "⚠️  Gitok already configured in $ProfileName" -ForegroundColor Yellow
+        Write-Host "⚠️  GitOK already configured in $ProfileName" -ForegroundColor Yellow
         return $false
     }
 }
@@ -65,7 +65,7 @@ if ($wslAvailable) {
             $wslInstall = wsl bash -c "curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh | bash"
             
             if ($LASTEXITCODE -eq 0) {
-                Write-Host "✅ Gitok installed in WSL!" -ForegroundColor Green
+                Write-Host "✅ GitOK installed in WSL!" -ForegroundColor Green
                 
                 # Test WSL installation
                 $wslVersion = wsl bash -c "source ~/.gitok.sh && gitok --version" 2>$null
@@ -111,7 +111,7 @@ if ($gitBashPath) {
         & $gitBashPath -c "curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/.gitok.sh -o ~/.gitok.sh && chmod +x ~/.gitok.sh"
         
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "✅ Gitok downloaded successfully" -ForegroundColor Green
+            Write-Host "✅ GitOK downloaded successfully" -ForegroundColor Green
             
             # Configure shell profiles in Git Bash environment
             $bashProfiles = @("~/.bashrc", "~/.bash_profile", "~/.profile")
@@ -123,7 +123,7 @@ if ($gitBashPath) {
                     fi
                     if ! grep -q 'source.*\.gitok\.sh' $profile; then
                         echo '' >> $profile
-                        echo '# Gitok - Git CLI Aliases' >> $profile
+                        echo '# GitOK - GitOK' >> $profile
                         echo 'source ~/.gitok.sh' >> $profile
                         echo 'Added to $profile'
                     else
@@ -147,7 +147,7 @@ if ($gitBashPath) {
                 $installationSuccess = $true
             }
         } else {
-            Write-Host "❌ Failed to download Gitok for Git Bash" -ForegroundColor Red
+            Write-Host "❌ Failed to download GitOK for Git Bash" -ForegroundColor Red
         }
     }
     catch {
@@ -160,7 +160,7 @@ Write-Host "" -ForegroundColor White
 if ($installationSuccess) {
     Write-Host "🎉 Installation completed successfully!" -ForegroundColor Green
     Write-Host "" -ForegroundColor White
-    Write-Host "📖 How to use Gitok:" -ForegroundColor Cyan
+    Write-Host "📖 How to use GitOK:" -ForegroundColor Cyan
     
     if ($wslAvailable -and (wsl echo "test" 2>$null; $LASTEXITCODE -eq 0)) {
         Write-Host "   🐧 WSL (Recommended):" -ForegroundColor Blue
@@ -181,12 +181,12 @@ if ($installationSuccess) {
     Write-Host "   gitok --version      - Check version" -ForegroundColor White
     Write-Host "   gitcheatsheet        - View all commands" -ForegroundColor White
     Write-Host "   gitok --help         - Get help" -ForegroundColor White
-    Write-Host "   gitok --update       - Update Gitok" -ForegroundColor White
+    Write-Host "   gitok --update       - Update GitOK" -ForegroundColor White
     
 } else {
     Write-Host "❌ Installation failed" -ForegroundColor Red
     Write-Host "" -ForegroundColor White
-    Write-Host "📋 To use Gitok on Windows, you need one of:" -ForegroundColor Yellow
+    Write-Host "📋 To use GitOK on Windows, you need one of:" -ForegroundColor Yellow
     Write-Host "   1. Windows Subsystem for Linux (WSL) - Recommended" -ForegroundColor White
     Write-Host "      Install: wsl --install" -ForegroundColor Gray
     Write-Host "      Then restart and run this installer again" -ForegroundColor Gray

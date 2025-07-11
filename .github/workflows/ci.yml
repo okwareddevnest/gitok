@@ -169,9 +169,9 @@ jobs:
         
         # Generate dynamic release notes
         cat > release_notes.md << EOF
-        # 🚀 Gitok v$NEW_VERSION - Git CLI Productivity Boost
+        # 🚀 GitOK v$NEW_VERSION - Git CLI Productivity Boost
         
-        Gitok supercharges your Git workflow with 35+ custom commands and aliases designed to make Git operations faster and more intuitive.
+        GitOK supercharges your Git workflow with 35+ custom commands and aliases designed to make Git operations faster and more intuitive.
         
         ## 🌟 What's New in v$NEW_VERSION
         
@@ -261,7 +261,7 @@ jobs:
         
         ---
         
-        **⭐ Star this repo if Gitok boosts your Git productivity!**
+        **⭐ Star this repo if GitOK boosts your Git productivity!**
         
         Created with ❤️ by **Dedan Okware**
         EOF
@@ -277,7 +277,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: v${{ steps.bump_version.outputs.new }}
-        name: "🚀 Gitok v${{ steps.bump_version.outputs.new }} - Git CLI Productivity Boost"
+        name: "🚀 GitOK v${{ steps.bump_version.outputs.new }} - Git CLI Productivity Boost"
         body: ${{ env.RELEASE_NOTES }}
         draft: false
         prerelease: false
