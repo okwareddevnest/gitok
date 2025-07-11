@@ -710,12 +710,28 @@ function createboard() {
     return 1
   fi
   
+  # Get current repository info for metadata
+  local repo_info_output=""
+  local current_repo_owner=""
+  local current_repo_name=""
+  
+  if git remote get-url origin &>/dev/null; then
+    repo_info_output=$(get_repo_info 2>/dev/null | grep -E "^(repo_owner|repo_name):" || true)
+    current_repo_owner=$(echo "$repo_info_output" | grep "^repo_owner:" | cut -d':' -f2 || echo "")
+    current_repo_name=$(echo "$repo_info_output" | grep "^repo_name:" | cut -d':' -f2 || echo "")
+  fi
+
   # Create board JSON structure (GitHub Projects v2 compatible)
   cat > "$board_file" << EOF
 {
   "name": "$board_name",
   "description": "${board_description:-Default project board}",
   "visibility": "private",
+  "target_repository": {
+    "owner": "${current_repo_owner:-}",
+    "name": "${current_repo_name:-}",
+    "detected_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  },
   "views": [
     {
       "name": "Table View",
@@ -760,7 +776,13 @@ EOF
   
   echo "✅ Created local board: $board_name"
   echo "📁 Saved to: $board_file"
-  echo "💡 Use 'pushboard \"$board_name\"' to push to GitHub"
+  if [ -n "$current_repo_owner" ] && [ -n "$current_repo_name" ]; then
+    echo "🎯 Target repository: $current_repo_owner/$current_repo_name"
+    echo "💡 Use 'pushboard \"$board_name\"' to create repository-level project"
+  else
+    echo "💡 Use 'pushboard \"$board_name\"' to push to GitHub"
+    echo "⚠️  No repository detected - project will be created at user/org level"
+  fi
 }
 
 # List local project boards
@@ -785,11 +807,16 @@ function listboards() {
       local description=$(safe_jq '.description' "$board_file" "No description")
       local pushed=$(safe_jq '.pushed_to_github' "$board_file" "false")
       local github_id=$(safe_jq '.github_id' "$board_file" "null")
+      local repo_owner=$(safe_jq '.repository_owner // .target_repository.owner' "$board_file" "")
+      local repo_name=$(safe_jq '.repository_name // .target_repository.name' "$board_file" "")
       
       echo "📌 $name"
       echo "   Description: $description"
+      if [ -n "$repo_owner" ] && [ -n "$repo_name" ]; then
+        echo "   Repository: 📁 $repo_owner/$repo_name"
+      fi
       if [ "$pushed" = "true" ] && [ "$github_id" != "null" ]; then
-        echo "   Status: ✅ Pushed to GitHub (ID: $github_id)"
+        echo "   Status: ✅ Repository-level project on GitHub (ID: $github_id)"
       else
         echo "   Status: 📝 Local only"
       fi
@@ -964,14 +991,25 @@ function pushboard() {
     fi
   fi
   
-  echo "🚀 Pushing board '$board_name' to GitHub..."
+  echo "🚀 Creating repository-level project for '$board_name'..."
   
-  # Use enhanced repository ownership detection
-  local owner_id=$(detect_repo_owner)
-  local detection_result=$?
+  # Get repository information
+  local repo_info=$(get_repo_info)
+  local repo_info_result=$?
   
-  if [ $detection_result -ne 0 ] || [ -z "$owner_id" ]; then
-    echo "❌ Could not determine project owner or verify access"
+  if [ $repo_info_result -ne 0 ]; then
+    echo "❌ Could not get repository information"
+    return 1
+  fi
+  
+  # Extract repository details from output
+  local repo_id=$(echo "$repo_info" | grep "^repo_id:" | cut -d':' -f2)
+  local repo_owner=$(echo "$repo_info" | grep "^repo_owner:" | cut -d':' -f2)
+  local repo_name=$(echo "$repo_info" | grep "^repo_name:" | cut -d':' -f2)
+  local owner_id=$(echo "$repo_info" | grep "^owner_id:" | cut -d':' -f2)
+  
+  if [ -z "$repo_id" ] || [ -z "$owner_id" ]; then
+    echo "❌ Could not extract repository information"
     return 1
   fi
   
@@ -979,8 +1017,13 @@ function pushboard() {
   local board_title=$(jq -r '.name' "$board_file")
   local board_description=$(jq -r '.description' "$board_file")
   
+  # Create project with repository-specific title
+  local project_title="$board_title ($repo_owner/$repo_name)"
+  
+  echo "📦 Creating project: $project_title"
+  
   # Create project using GraphQL
-  local create_query="mutation { createProjectV2(input: { ownerId: \"$owner_id\", title: \"$board_title\" }) { projectV2 { id number url } } }"
+  local create_query="mutation { createProjectV2(input: { ownerId: \"$owner_id\", title: \"$project_title\" }) { projectV2 { id number url } } }"
   local create_response=$(github_graphql_query "$create_query")
   
   if echo "$create_response" | grep -q '"errors"'; then
@@ -998,17 +1041,37 @@ function pushboard() {
     return 1
   fi
   
-  # Update board file with GitHub info
+  echo "✅ Project created successfully!"
+  echo "🔗 Linking project to repository: $repo_owner/$repo_name"
+  
+  # Link project to repository
+  local link_query="mutation { linkProjectV2ToRepository(input: { projectId: \"$project_id\", repositoryId: \"$repo_id\" }) { repository { id name } } }"
+  local link_response=$(github_graphql_query "$link_query")
+  
+  if echo "$link_response" | grep -q '"errors"'; then
+    echo "⚠️ Project created but failed to link to repository"
+    echo "$link_response" | jq -r '.errors[0].message' 2>/dev/null || echo "Unknown error"
+    echo "Project will still be accessible but not directly linked to this repository"
+  else
+    echo "✅ Project successfully linked to repository!"
+  fi
+  
+  # Update board file with GitHub and repository info
   local updated_board=$(jq --arg id "$project_id" --arg number "$project_number" --arg url "$project_url" \
-    '.pushed_to_github = true | .github_id = $id | .github_number = ($number | tonumber) | .github_url = $url | .updated_at = (now | todate)' \
+    --arg repo_id "$repo_id" --arg repo_owner "$repo_owner" --arg repo_name "$repo_name" \
+    '.pushed_to_github = true | .github_id = $id | .github_number = ($number | tonumber) | .github_url = $url | .repository_id = $repo_id | .repository_owner = $repo_owner | .repository_name = $repo_name | .updated_at = (now | todate)' \
     "$board_file")
   
   echo "$updated_board" > "$board_file"
   
-  echo "✅ Successfully pushed board to GitHub!"
+  echo "✅ Successfully created repository-level project!"
+  echo "📁 Repository: $repo_owner/$repo_name"
   echo "🔗 Project URL: $project_url"
   echo "🆔 Project ID: $project_id"
   echo "📊 Project Number: $project_number"
+  echo ""
+  echo "💡 This project is now linked to your repository and will appear in the"
+  echo "   'Projects' tab of your GitHub repository: https://github.com/$repo_owner/$repo_name/projects"
 }
 
 # Edit local board
@@ -3637,11 +3700,19 @@ function showproject() {
   project_id=$(jq -r '.github_id' "$board_file" 2>/dev/null)
   local project_url
   project_url=$(jq -r '.github_url' "$board_file" 2>/dev/null)
+  local repo_owner
+  repo_owner=$(jq -r '.repository_owner // .target_repository.owner' "$board_file" 2>/dev/null)
+  local repo_name
+  repo_name=$(jq -r '.repository_name // .target_repository.name' "$board_file" 2>/dev/null)
   
   echo "📊 Project Details: $board_name"
   echo "================================="
-  echo "🔗 URL: $project_url"
-  echo "🆔 ID: $project_id"
+  if [ -n "$repo_owner" ] && [ -n "$repo_name" ] && [ "$repo_owner" != "null" ] && [ "$repo_name" != "null" ]; then
+    echo "📁 Repository: $repo_owner/$repo_name"
+    echo "🔗 Repository Projects: https://github.com/$repo_owner/$repo_name/projects"
+  fi
+  echo "🔗 Project URL: $project_url"
+  echo "🆔 Project ID: $project_id"
   echo ""
   
   # Get project views
@@ -3809,4 +3880,57 @@ function gitcheatsheet() {
   echo "📊 Export data, track velocity, and get AI insights"
   echo "==============================================="
   echo ""
+}
+
+# Get current repository information
+function get_repo_info() {
+  local origin_url=$(git remote get-url origin 2>/dev/null)
+  
+  if [ -z "$origin_url" ]; then
+    echo "❌ No git remote found. Make sure you're in a git repository with GitHub remote."
+    return 1
+  fi
+  
+  if ! echo "$origin_url" | grep -q "github.com"; then
+    echo "❌ Remote is not a GitHub repository: $origin_url"
+    return 1
+  fi
+  
+  # Extract owner and repo name from GitHub URL
+  local repo_path
+  repo_path=$(echo "$origin_url" | sed -E 's|.*github\.com[/:]([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
+  
+  if [ -z "$repo_path" ] || [[ ! "$repo_path" =~ ^[^/]+/[^/]+$ ]]; then
+    echo "❌ Could not parse repository path from: $origin_url"
+    return 1
+  fi
+  
+  local repo_owner=$(echo "$repo_path" | cut -d'/' -f1)
+  local repo_name=$(echo "$repo_path" | cut -d'/' -f2)
+  
+  echo "📁 Repository: $repo_owner/$repo_name"
+  
+  # Verify repository exists and get its ID
+  local repo_query="query { repository(owner: \"$repo_owner\", name: \"$repo_name\") { id name owner { login id } } }"
+  local repo_response=$(github_graphql_query "$repo_query")
+  
+  if echo "$repo_response" | grep -q '"errors"'; then
+    echo "❌ Repository not found or not accessible: $repo_owner/$repo_name"
+    return 1
+  fi
+  
+  local repo_id=$(echo "$repo_response" | jq -r '.data.repository.id' 2>/dev/null)
+  local actual_owner=$(echo "$repo_response" | jq -r '.data.repository.owner.login' 2>/dev/null)
+  local owner_id=$(echo "$repo_response" | jq -r '.data.repository.owner.id' 2>/dev/null)
+  
+  if [ -z "$repo_id" ] || [ "$repo_id" = "null" ]; then
+    echo "❌ Could not get repository information"
+    return 1
+  fi
+  
+  echo "✅ Repository verified: $actual_owner/$repo_name"
+  echo "repo_id:$repo_id"
+  echo "repo_owner:$actual_owner"
+  echo "repo_name:$repo_name"
+  echo "owner_id:$owner_id"
 }
