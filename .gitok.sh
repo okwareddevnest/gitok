@@ -1,5 +1,6 @@
 #!/bin/bash
-# GitOK CLI Aliases
+# shellcheck disable=SC2155
+# GitOK - Git CLI Productivity Boost
 # Created by Dedan Okware
 
 # GitOK Configuration
@@ -398,8 +399,8 @@ function safe_jq() {
     return 1
   fi
   
-  local result=$(jq -r "$query" "$file" 2>/dev/null)
-  if [ $? -ne 0 ] || [ "$result" = "null" ]; then
+  local   result=$(jq -r "$query" "$file" 2>/dev/null)
+  if ! jq -r "$query" "$file" >/dev/null 2>&1 || [ "$result" = "null" ]; then
     echo "${default_value:-}"
     return 1
   fi
@@ -3468,14 +3469,17 @@ function showproject() {
     return 1
   fi
   
-  local pushed=$(jq -r '.pushed_to_github' "$board_file" 2>/dev/null)
+  local pushed
+  pushed=$(jq -r '.pushed_to_github' "$board_file" 2>/dev/null)
   if [ "$pushed" != "true" ]; then
     echo "❌ Board '$board_name' not pushed to GitHub yet. Use 'pushboard' first."
     return 1
   fi
   
-  local project_id=$(jq -r '.github_id' "$board_file" 2>/dev/null)
-  local project_url=$(jq -r '.github_url' "$board_file" 2>/dev/null)
+  local project_id
+  project_id=$(jq -r '.github_id' "$board_file" 2>/dev/null)
+  local project_url
+  project_url=$(jq -r '.github_url' "$board_file" 2>/dev/null)
   
   echo "📊 Project Details: $board_name"
   echo "================================="
@@ -3486,7 +3490,8 @@ function showproject() {
   # Get project views
   echo "📋 Views:"
   local views_query="query { node(id: \"$project_id\") { ... on ProjectV2 { views(first: 10) { nodes { id name layout } } } } }"
-  local views_response=$(github_graphql_query "$views_query")
+  local views_response
+  views_response=$(github_graphql_query "$views_query")
   
   if echo "$views_response" | grep -q '"errors"'; then
     echo "❌ Failed to fetch views"
@@ -3499,7 +3504,8 @@ function showproject() {
   # Get project fields
   echo "🏷️  Fields:"
   local fields_query="query { node(id: \"$project_id\") { ... on ProjectV2 { fields(first: 20) { nodes { ... on ProjectV2Field { id name dataType } ... on ProjectV2SingleSelectField { id name options { id name } } } } } } }"
-  local fields_response=$(github_graphql_query "$fields_query")
+  local fields_response
+  fields_response=$(github_graphql_query "$fields_query")
   
   if echo "$fields_response" | grep -q '"errors"'; then
     echo "❌ Failed to fetch fields"
@@ -3512,7 +3518,8 @@ function showproject() {
   # Get project items count
   echo "📝 Items:"
   local items_query="query { node(id: \"$project_id\") { ... on ProjectV2 { items(first: 5) { totalCount nodes { id content { ... on DraftIssue { title body } ... on Issue { title body } ... on PullRequest { title body } } } } } } }"
-  local items_response=$(github_graphql_query "$items_query")
+  local items_response
+  items_response=$(github_graphql_query "$items_query")
   
   if echo "$items_response" | grep -q '"errors"'; then
     echo "❌ Failed to fetch items"
