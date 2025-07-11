@@ -710,30 +710,51 @@ function createboard() {
     return 1
   fi
   
-  # Create board JSON structure
+  # Create board JSON structure (GitHub Projects v2 compatible)
   cat > "$board_file" << EOF
 {
   "name": "$board_name",
   "description": "${board_description:-Default project board}",
   "visibility": "private",
-  "columns": [
+  "views": [
     {
-      "name": "To Do",
-      "cards": []
+      "name": "Table View",
+      "layout": "TABLE",
+      "is_default": true
     },
     {
-      "name": "In Progress", 
-      "cards": []
-    },
-    {
-      "name": "Done",
-      "cards": []
+      "name": "Board View",
+      "layout": "BOARD",
+      "is_default": false
     }
   ],
+  "fields": [
+    {
+      "name": "Status",
+      "type": "SINGLE_SELECT",
+      "options": [
+        {"name": "To Do", "color": "GRAY"},
+        {"name": "In Progress", "color": "YELLOW"},
+        {"name": "Done", "color": "GREEN"}
+      ]
+    },
+    {
+      "name": "Priority",
+      "type": "SINGLE_SELECT",
+      "options": [
+        {"name": "High", "color": "RED"},
+        {"name": "Medium", "color": "ORANGE"},
+        {"name": "Low", "color": "BLUE"}
+      ]
+    }
+  ],
+  "items": [],
   "created_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "updated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "pushed_to_github": false,
-  "github_id": null
+  "github_id": null,
+  "github_number": null,
+  "github_url": null
 }
 EOF
   
@@ -775,6 +796,125 @@ function listboards() {
       echo ""
     fi
   done
+}
+
+# Check if user has access to create projects for a given owner/organization
+function verify_project_access() {
+  local target_owner="$1"
+  
+  if [ -z "$target_owner" ]; then
+    echo "❌ No target owner specified"
+    return 1
+  fi
+  
+  echo "🔍 Verifying project access for: $target_owner"
+  
+  # Get authenticated user info
+  local viewer_query="query { viewer { login id organizations(first: 100) { nodes { login id } } } }"
+  local viewer_response=$(github_graphql_query "$viewer_query")
+  
+  if echo "$viewer_response" | grep -q '"errors"'; then
+    echo "❌ Failed to get user information"
+    return 1
+  fi
+  
+  local authenticated_user=$(echo "$viewer_response" | jq -r '.data.viewer.login' 2>/dev/null)
+  local authenticated_id=$(echo "$viewer_response" | jq -r '.data.viewer.id' 2>/dev/null)
+  
+  echo "👤 Authenticated as: $authenticated_user"
+  
+  # Check if target owner is the authenticated user
+  if [ "$target_owner" = "$authenticated_user" ]; then
+    echo "✅ Creating project for your personal account"
+    echo "$authenticated_id"
+    return 0
+  fi
+  
+  # Check if target owner is an organization the user belongs to
+  local org_id=$(echo "$viewer_response" | jq -r --arg org "$target_owner" '.data.viewer.organizations.nodes[] | select(.login == $org) | .id' 2>/dev/null)
+  
+  if [ -n "$org_id" ] && [ "$org_id" != "null" ]; then
+    echo "✅ Creating project for organization: $target_owner"
+    echo "$org_id"
+    return 0
+  fi
+  
+  # If target owner is different, check if it's a valid organization/user
+  local owner_query="query { user(login: \"$target_owner\") { id login } organization(login: \"$target_owner\") { id login } }"
+  local owner_response=$(github_graphql_query "$owner_query")
+  
+  if echo "$owner_response" | grep -q '"errors"'; then
+    echo "❌ Target owner '$target_owner' not found or not accessible"
+    return 1
+  fi
+  
+  local user_id=$(echo "$owner_response" | jq -r '.data.user.id' 2>/dev/null)
+  local org_id=$(echo "$owner_response" | jq -r '.data.organization.id' 2>/dev/null)
+  
+  if [ -n "$user_id" ] && [ "$user_id" != "null" ]; then
+    echo "⚠️  Target owner '$target_owner' is a different user"
+    echo "   You can only create projects for your own account or organizations you belong to"
+    echo "   Using your account ($authenticated_user) instead"
+    echo "$authenticated_id"
+    return 0
+  elif [ -n "$org_id" ] && [ "$org_id" != "null" ]; then
+    echo "⚠️  Target owner '$target_owner' is an organization you don't belong to"
+    echo "   You can only create projects for organizations you're a member of"
+    echo "   Using your account ($authenticated_user) instead"
+    echo "$authenticated_id"
+    return 0
+  fi
+  
+  echo "❌ Could not determine valid owner ID"
+  return 1
+}
+
+# Enhanced function to detect repository ownership with fallback
+function detect_repo_owner() {
+  local origin_url=$(git remote get-url origin 2>/dev/null)
+  local detected_owner=""
+  
+  if [ -n "$origin_url" ]; then
+    # Extract owner from GitHub URL
+    if echo "$origin_url" | grep -q "github.com"; then
+      detected_owner=$(echo "$origin_url" | sed -E 's|.*github\.com[/:]([^/]+)/.*|\1|' | sed 's|\.git$||')
+    fi
+  fi
+  
+  if [ -n "$detected_owner" ]; then
+    echo "🔍 Detected repository owner: $detected_owner"
+    
+    # Verify access to this owner
+    local owner_id=$(verify_project_access "$detected_owner")
+    local access_check_result=$?
+    
+    if [ $access_check_result -eq 0 ] && [ -n "$owner_id" ]; then
+      echo "$owner_id"
+      return 0
+    fi
+  fi
+  
+  # Fallback to authenticated user if detection fails
+  echo "🔄 Falling back to authenticated user..."
+  local viewer_query="query { viewer { login id } }"
+  local viewer_response=$(github_graphql_query "$viewer_query")
+  
+  if echo "$viewer_response" | grep -q '"errors"'; then
+    echo "❌ Failed to get authenticated user info"
+    return 1
+  fi
+  
+  local fallback_id=$(echo "$viewer_response" | jq -r '.data.viewer.id' 2>/dev/null)
+  local fallback_login=$(echo "$viewer_response" | jq -r '.data.viewer.login' 2>/dev/null)
+  
+  if [ -n "$fallback_id" ] && [ "$fallback_id" != "null" ]; then
+    echo "✅ Using authenticated user: $fallback_login"
+    echo "$fallback_id"
+    return 0
+  fi
+  
+  echo "❌ Could not determine project owner"
+  return 1
 }
 
 # Push local board to GitHub
@@ -824,44 +964,16 @@ function pushboard() {
     fi
   fi
   
-  # Get current git remote to determine owner
-  local origin_url=$(git remote get-url origin 2>/dev/null)
-  local owner=""
-  
-  if [ -n "$origin_url" ]; then
-    # Extract owner from GitHub URL
-    if echo "$origin_url" | grep -q "github.com"; then
-      owner=$(echo "$origin_url" | sed -E 's|.*github\.com[/:]([^/]+)/.*|\1|' | sed 's|\.git$||')
-    fi
-  fi
-  
-  if [ -z "$owner" ]; then
-    echo "❌ Cannot determine GitHub owner. Make sure you're in a git repository with GitHub remote."
-    return 1
-  fi
-  
   echo "🚀 Pushing board '$board_name' to GitHub..."
-  echo "📍 Owner: $owner"
   
-  # First, get authenticated user ID (projects are owned by the authenticated user)
-  local viewer_query="query { viewer { login id } }"
-  local viewer_response=$(github_graphql_query "$viewer_query")
+  # Use enhanced repository ownership detection
+  local owner_id=$(detect_repo_owner)
+  local detection_result=$?
   
-  if echo "$viewer_response" | grep -q '"errors"'; then
-    echo "❌ Failed to get user information"
-    echo "$viewer_response" | jq -r '.errors[0].message' 2>/dev/null || echo "Unknown error"
+  if [ $detection_result -ne 0 ] || [ -z "$owner_id" ]; then
+    echo "❌ Could not determine project owner or verify access"
     return 1
   fi
-  
-  local owner_id=$(echo "$viewer_response" | jq -r '.data.viewer.id' 2>/dev/null)
-  local owner_login=$(echo "$viewer_response" | jq -r '.data.viewer.login' 2>/dev/null)
-  
-  if [ -z "$owner_id" ] || [ "$owner_id" = "null" ]; then
-    echo "❌ Could not get authenticated user ID"
-    return 1
-  fi
-  
-  echo "👤 Authenticated user: $owner_login"
   
   # Read board data
   local board_title=$(jq -r '.name' "$board_file")
@@ -932,53 +1044,91 @@ function editboard() {
   fi
   
   echo "✏️ Editing board: $board_name"
-  echo "Current columns:"
-  jq -r '.columns[] | "- " + .name' "$board_file"
+  echo "Current views:"
+  jq -r '.views[]? | "- " + .name + " (" + .layout + ")"' "$board_file" 2>/dev/null || echo "- Table View (TABLE)"
+  echo ""
+  echo "Current fields:"
+  jq -r '.fields[]? | "- " + .name + " (" + .type + ")"' "$board_file" 2>/dev/null || echo "- Status (SINGLE_SELECT)"
   echo ""
   
   echo "Available actions:"
-  echo "1. Add column"
-  echo "2. Remove column"
-  echo "3. Add card to column"
-  echo "4. Update description"
-  echo "5. Cancel"
+  echo "1. Add view"
+  echo "2. Remove view"
+  echo "3. Add field option"
+  echo "4. Add item"
+  echo "5. Update description"
+  echo "6. Cancel"
   echo ""
   
-  read -r -p "Choose action (1-5): " action
+  read -r -p "Choose action (1-6): " action
   
   case "$action" in
     1)
-      read -r -p "Enter column name: " column_name
-      if [ -n "$column_name" ]; then
-        local updated_board=$(jq --arg name "$column_name" \
-          '.columns += [{"name": $name, "cards": []}] | .updated_at = (now | todate)' \
+      read -r -p "Enter view name: " view_name
+      echo "Select layout: 1) TABLE  2) BOARD  3) ROADMAP"
+      read -r -p "Choose layout (1-3): " layout_choice
+      case "$layout_choice" in
+        1) layout="TABLE" ;;
+        2) layout="BOARD" ;;
+        3) layout="ROADMAP" ;;
+        *) layout="TABLE" ;;
+      esac
+      
+      if [ -n "$view_name" ]; then
+        local updated_board=$(jq --arg name "$view_name" --arg layout "$layout" \
+          '.views += [{"name": $name, "layout": $layout, "is_default": false}] | .updated_at = (now | todate)' \
           "$board_file")
         echo "$updated_board" > "$board_file"
-        echo "✅ Added column: $column_name"
+        echo "✅ Added view: $view_name ($layout)"
       fi
       ;;
     2)
-      read -r -p "Enter column name to remove: " column_name
-      if [ -n "$column_name" ]; then
-        local updated_board=$(jq --arg name "$column_name" \
-          '.columns = [.columns[] | select(.name != $name)] | .updated_at = (now | todate)' \
+      read -r -p "Enter view name to remove: " view_name
+      if [ -n "$view_name" ]; then
+        local updated_board=$(jq --arg name "$view_name" \
+          '.views = [.views[]? | select(.name != $name)] | .updated_at = (now | todate)' \
           "$board_file")
         echo "$updated_board" > "$board_file"
-        echo "✅ Removed column: $column_name"
+        echo "✅ Removed view: $view_name"
       fi
       ;;
     3)
-      read -r -p "Enter column name: " column_name
-      read -r -p "Enter card title: " card_title
-      if [ -n "$column_name" ] && [ -n "$card_title" ]; then
-        local updated_board=$(jq --arg col "$column_name" --arg title "$card_title" \
-          '.columns = [.columns[] | if .name == $col then .cards += [$title] else . end] | .updated_at = (now | todate)' \
+      echo "Current fields:"
+      jq -r '.fields[]? | "- " + .name' "$board_file" 2>/dev/null
+      read -r -p "Enter field name to add option to: " field_name
+      read -r -p "Enter option name: " option_name
+      echo "Select color: 1) RED  2) ORANGE  3) YELLOW  4) GREEN  5) BLUE  6) PURPLE  7) GRAY"
+      read -r -p "Choose color (1-7): " color_choice
+      case "$color_choice" in
+        1) color="RED" ;;
+        2) color="ORANGE" ;;
+        3) color="YELLOW" ;;
+        4) color="GREEN" ;;
+        5) color="BLUE" ;;
+        6) color="PURPLE" ;;
+        7) color="GRAY" ;;
+        *) color="GRAY" ;;
+      esac
+      
+      if [ -n "$field_name" ] && [ -n "$option_name" ]; then
+        local updated_board=$(jq --arg field "$field_name" --arg option "$option_name" --arg color "$color" \
+          '.fields = [.fields[]? | if .name == $field then .options += [{"name": $option, "color": $color}] else . end] | .updated_at = (now | todate)' \
           "$board_file")
         echo "$updated_board" > "$board_file"
-        echo "✅ Added card '$card_title' to column '$column_name'"
+        echo "✅ Added option '$option_name' to field '$field_name'"
       fi
       ;;
     4)
+      read -r -p "Enter item title: " item_title
+      if [ -n "$item_title" ]; then
+        local updated_board=$(jq --arg title "$item_title" \
+          '.items += [{"title": $title, "body": "", "created_at": (now | todate)}] | .updated_at = (now | todate)' \
+          "$board_file")
+        echo "$updated_board" > "$board_file"
+        echo "✅ Added item: $item_title"
+      fi
+      ;;
+    5)
       read -r -p "Enter new description: " new_description
       if [ -n "$new_description" ]; then
         local updated_board=$(jq --arg desc "$new_description" \
@@ -988,7 +1138,7 @@ function editboard() {
         echo "✅ Updated description"
       fi
       ;;
-    5)
+    6)
       echo "❌ Edit cancelled"
       ;;
     *)
