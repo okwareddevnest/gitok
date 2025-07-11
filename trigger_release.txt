@@ -1,2 +1,0 @@
-This file triggers the GitHub Actions workflow to create the missing v1.0.1 release.
-Generated on: 2025-07-07
