@@ -1,5 +1,5 @@
 #!/bin/bash
-# shellcheck disable=SC2155,SC2181,SC2016,SC2034,SC2086,SC2094,SC2046
+# shellcheck disable=SC2155,SC2181,SC2016,SC2034,SC2086,SC2094,SC2046,SC2001,SC2002,SC2009,SC2164,SC2162
 # GitOK - Git CLI Productivity Boost
 # Created by Dedan Okware
 
@@ -535,7 +535,7 @@ function githubauth() {
   local attempts=0
   
   while [ $attempts -lt $max_attempts ]; do
-    sleep $poll_interval
+    sleep "$poll_interval"
     attempts=$((attempts + 1))
     
     local token_response=$(curl -s -X POST \
@@ -3456,7 +3456,8 @@ function showproject() {
   local board_file=""
   for file in "$GITOK_BOARDS_DIR"/*.json; do
     if [ -f "$file" ]; then
-      local name=$(jq -r '.name' "$file" 2>/dev/null)
+      local name
+      name=$(jq -r '.name' "$file" 2>/dev/null)
       if [ "$name" = "$board_name" ]; then
         board_file="$file"
         break
@@ -3524,7 +3525,8 @@ function showproject() {
   if echo "$items_response" | grep -q '"errors"'; then
     echo "❌ Failed to fetch items"
   else
-    local total_items=$(echo "$items_response" | jq -r '.data.node.items.totalCount' 2>/dev/null || echo "0")
+    local total_items
+    total_items=$(echo "$items_response" | jq -r '.data.node.items.totalCount' 2>/dev/null || echo "0")
     echo "  Total items: $total_items"
     
     if [ "$total_items" != "0" ] && [ "$total_items" != "null" ]; then
