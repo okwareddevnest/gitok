@@ -3395,23 +3395,23 @@ EOF
       local template_data=$(cat "$template_file")
       local name=$(echo "$template_data" | jq -r '.name')
       local description=$(echo "$template_data" | jq -r '.description')
-      local columns=$(echo "$template_data" | jq -r '.columns | length')
-      local fields=$(echo "$template_data" | jq -r '.custom_fields | length')
+      local views=$(echo "$template_data" | jq -r '.views | length')
+      local fields=$(echo "$template_data" | jq -r '.fields | length')
       local tasks=$(echo "$template_data" | jq -r '.sample_tasks | length')
       
       echo "📝 Name: $name"
       echo "📄 Description: $description"
-      echo "📊 Columns: $columns"
-      echo "🏷️  Custom Fields: $fields"
+      echo "📊 Views: $views"
+      echo "🏷️  Fields: $fields"
       echo "📋 Sample Tasks: $tasks"
       echo ""
       
-      echo "📚 COLUMNS:"
-      echo "$template_data" | jq -r '.columns[] | "   • " + .name + ": " + .description'
+      echo "📚 VIEWS:"
+      echo "$template_data" | jq -r '.views[] | "   • " + .name + " (" + .layout + ")"'
       echo ""
       
-      echo "🏷️  CUSTOM FIELDS:"
-      echo "$template_data" | jq -r '.custom_fields[] | "   • " + .name + " (" + .type + ")"'
+      echo "🏷️  FIELDS:"
+      echo "$template_data" | jq -r '.fields[] | "   • " + .name + " (" + .type + ")"'
       echo ""
       
       echo "📋 SAMPLE TASKS:"
@@ -3425,14 +3425,14 @@ EOF
   esac
 }
 
-# Add column (field) to a GitHub project
-function addcolumn() {
+# Add field to a GitHub project
+function addfield() {
   local board_name="$1"
-  local column_name="$2"
-  local column_type="${3:-SINGLE_SELECT}"  # SINGLE_SELECT, TEXT, NUMBER, DATE, etc.
+  local field_name="$2"
+  local field_type="${3:-SINGLE_SELECT}"  # SINGLE_SELECT, TEXT, NUMBER, DATE, etc.
   
-  if [ -z "$board_name" ] || [ -z "$column_name" ]; then
-    echo "❌ Usage: addcolumn \"Board Name\" \"Column Name\" [type]"
+  if [ -z "$board_name" ] || [ -z "$field_name" ]; then
+    echo "❌ Usage: addfield \"Board Name\" \"Field Name\" [type]"
     echo "   Types: SINGLE_SELECT (default), TEXT, NUMBER, DATE"
     return 1
   fi
@@ -3472,26 +3472,26 @@ function addcolumn() {
   
   local project_id=$(jq -r '.github_id' "$board_file" 2>/dev/null)
   
-  echo "📊 Adding column '$column_name' to project '$board_name'..."
+  echo "📊 Adding field '$field_name' to project '$board_name'..."
   
   # Create field using GraphQL
   local create_field_query=""
-  if [ "$column_type" = "SINGLE_SELECT" ]; then
-    if [ "$column_name" = "Priority" ]; then
-      create_field_query="mutation { createProjectV2Field(input: { projectId: \"$project_id\", dataType: SINGLE_SELECT, name: \"$column_name\", singleSelectOptions: [{name: \"High\", description: \"High priority items\", color: RED}, {name: \"Medium\", description: \"Medium priority items\", color: YELLOW}, {name: \"Low\", description: \"Low priority items\", color: GREEN}] }) { projectV2Field { ... on ProjectV2SingleSelectField { id name } } } }"
-    elif [ "$column_name" = "Stage" ]; then
-      create_field_query="mutation { createProjectV2Field(input: { projectId: \"$project_id\", dataType: SINGLE_SELECT, name: \"$column_name\", singleSelectOptions: [{name: \"Planning\", description: \"In planning phase\", color: BLUE}, {name: \"Development\", description: \"In development\", color: YELLOW}, {name: \"Testing\", description: \"In testing phase\", color: ORANGE}, {name: \"Completed\", description: \"Completed\", color: GREEN}] }) { projectV2Field { ... on ProjectV2SingleSelectField { id name } } } }"
+  if [ "$field_type" = "SINGLE_SELECT" ]; then
+    if [ "$field_name" = "Priority" ]; then
+      create_field_query="mutation { createProjectV2Field(input: { projectId: \"$project_id\", dataType: SINGLE_SELECT, name: \"$field_name\", singleSelectOptions: [{name: \"High\", description: \"High priority items\", color: RED}, {name: \"Medium\", description: \"Medium priority items\", color: YELLOW}, {name: \"Low\", description: \"Low priority items\", color: GREEN}] }) { projectV2Field { ... on ProjectV2SingleSelectField { id name } } } }"
+    elif [ "$field_name" = "Stage" ]; then
+      create_field_query="mutation { createProjectV2Field(input: { projectId: \"$project_id\", dataType: SINGLE_SELECT, name: \"$field_name\", singleSelectOptions: [{name: \"Planning\", description: \"In planning phase\", color: BLUE}, {name: \"Development\", description: \"In development\", color: YELLOW}, {name: \"Testing\", description: \"In testing phase\", color: ORANGE}, {name: \"Completed\", description: \"Completed\", color: GREEN}] }) { projectV2Field { ... on ProjectV2SingleSelectField { id name } } } }"
     else
-      create_field_query="mutation { createProjectV2Field(input: { projectId: \"$project_id\", dataType: SINGLE_SELECT, name: \"$column_name\", singleSelectOptions: [{name: \"Option 1\", description: \"First option\", color: GRAY}, {name: \"Option 2\", description: \"Second option\", color: YELLOW}, {name: \"Option 3\", description: \"Third option\", color: GREEN}] }) { projectV2Field { ... on ProjectV2SingleSelectField { id name } } } }"
+      create_field_query="mutation { createProjectV2Field(input: { projectId: \"$project_id\", dataType: SINGLE_SELECT, name: \"$field_name\", singleSelectOptions: [{name: \"Option 1\", description: \"First option\", color: GRAY}, {name: \"Option 2\", description: \"Second option\", color: YELLOW}, {name: \"Option 3\", description: \"Third option\", color: GREEN}] }) { projectV2Field { ... on ProjectV2SingleSelectField { id name } } } }"
     fi
   else
-    create_field_query="mutation { createProjectV2Field(input: { projectId: \"$project_id\", dataType: $column_type, name: \"$column_name\" }) { projectV2Field { ... on ProjectV2Field { id name } } } }"
+    create_field_query="mutation { createProjectV2Field(input: { projectId: \"$project_id\", dataType: $field_type, name: \"$field_name\" }) { projectV2Field { ... on ProjectV2Field { id name } } } }"
   fi
   
   local field_response=$(github_graphql_query "$create_field_query")
   
   if echo "$field_response" | grep -q '"errors"'; then
-    echo "❌ Failed to create column"
+    echo "❌ Failed to create field"
     echo "$field_response" | jq -r '.errors[0].message' 2>/dev/null || echo "Unknown error"
     return 1
   fi
@@ -3499,13 +3499,19 @@ function addcolumn() {
   local field_id=$(echo "$field_response" | jq -r '.data.createProjectV2Field.projectV2Field.id' 2>/dev/null)
   
   if [ -z "$field_id" ] || [ "$field_id" = "null" ]; then
-    echo "❌ Failed to create column"
+    echo "❌ Failed to create field"
     return 1
   fi
   
-  echo "✅ Created column: $column_name"
+  echo "✅ Created field: $field_name"
   echo "🆔 Field ID: $field_id"
-  echo "📋 Type: $column_type"
+  echo "📋 Type: $field_type"
+}
+
+# Legacy alias for backward compatibility
+function addcolumn() {
+  echo "⚠️  'addcolumn' is deprecated. Use 'addfield' instead."
+  addfield "$@"
 }
 
 # Add item (task) to a GitHub project
