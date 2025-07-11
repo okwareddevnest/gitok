@@ -87,3 +87,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 📝 Other Changes
 - 🔧 Complete GitHub Projects v2 migration
 
+
+## [2.0.2] - 2025-07-11
+
+### ✨ Added
+- 🚀 Implement Repository-Level Project Boards
+
