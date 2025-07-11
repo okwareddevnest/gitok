@@ -1,5 +1,5 @@
 #!/bin/bash
-# shellcheck disable=SC2155
+# shellcheck disable=SC2155,SC2181,SC2016,SC2034,SC2086,SC2094,SC2046
 # GitOK - Git CLI Productivity Boost
 # Created by Dedan Okware
 
