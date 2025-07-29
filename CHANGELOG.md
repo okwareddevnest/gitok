@@ -106,3 +106,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Delete trigger_release.txt
 - Delete CLAUDE.md
 
+
+## [2.0.4] - 2025-07-29
+
+### ✨ Added
+- 📝 Improve release notes - concise and focused on what's new
+
