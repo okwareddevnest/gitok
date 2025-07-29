@@ -169,7 +169,7 @@ jobs:
         
         # Generate dynamic release notes
         cat > release_notes.md << EOF
-        # 🚀 GitOK v$NEW_VERSION - Git CLI Productivity Boost
+        #v$NEW_VERSION
         
         GitOK supercharges your Git workflow with 35+ custom commands and aliases designed to make Git operations faster and more intuitive.
         
