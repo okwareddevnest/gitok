@@ -93,3 +93,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### ✨ Added
 - 🚀 Implement Repository-Level Project Boards
 
+
+## [2.0.3] - 2025-07-29
+
+### ✨ Added
+- 🐟 Add Fish Shell support
+
+### 🚀 Improved
+- 🔧 Update release notes formatting in CI workflow
+
+### 📝 Other Changes
+- Delete trigger_release.txt
+- Delete CLAUDE.md
+
