@@ -83,11 +83,21 @@ if command -v fish >/dev/null 2>&1; then
         echo -e "${YELLOW}📄 Created config.fish${NC}"
     fi
     
-    if ! grep -q "source.*\.gitok\.sh" "$fish_config_file"; then
+    # Download fish-compatible version
+    echo -e "${BLUE}🐟 Downloading GitOK Fish Shell version...${NC}"
+    if curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/.gitok.fish -o ~/.gitok.fish; then
+        chmod +x ~/.gitok.fish
+        echo -e "${GREEN}✅ GitOK Fish Shell version downloaded successfully${NC}"
+    else
+        echo -e "${RED}❌ Failed to download GitOK Fish Shell version${NC}"
+        exit 1
+    fi
+    
+    if ! grep -q "source.*\.gitok\.fish" "$fish_config_file"; then
         {
             echo ""
-            echo "# GitOK - GitOK"
-            echo "source ~/.gitok.sh"
+            echo "# GitOK - GitOK (Fish Shell)"
+            echo "source ~/.gitok.fish"
         } >> "$fish_config_file"
         echo -e "${GREEN}✅ Added GitOK to config.fish${NC}"
         ((PROFILES_UPDATED++))

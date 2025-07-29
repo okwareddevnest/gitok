@@ -11,6 +11,7 @@ GitOK is a productivity boost for developers. It includes 35+ custom Git command
 - 📦 **Semantic versioning** with automated releases
 - 🛠️ **CI/CD pipeline** with GitHub Actions
 - 🪟 **Cross-platform support** (Linux, macOS, Windows WSL, Git Bash)
+- 🐟 **Fish Shell support** with native fish syntax
 - ⚡ **Zero configuration** - works out of the box
 
 ## 📦 Installation
@@ -18,6 +19,17 @@ GitOK is a productivity boost for developers. It includes 35+ custom Git command
 ### 🐧 Linux & macOS
 ```bash
 bash <(curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh)
+```
+
+### 🐟 Fish Shell Users
+The installer automatically detects and configures Fish Shell support. If you're using Fish Shell, the installer will:
+- Download the Fish-compatible version (`.gitok.fish`)
+- Configure `~/.config/fish/config.fish`
+- Use native Fish syntax for all functions
+
+To manually install for Fish Shell:
+```fish
+curl -sL https://raw.githubusercontent.com/okwareddevnest/gitok/main/install.sh | bash
 ```
 
 ### 🪟 Windows Users
@@ -49,6 +61,16 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 ```bash
 # Restart your terminal or run:
 source ~/.bashrc  # or source ~/.zshrc
+
+# Test installation
+gitok --version
+gitcheatsheet
+```
+
+**For Fish Shell users:**
+```fish
+# Restart your terminal or run:
+source ~/.config/fish/config.fish
 
 # Test installation
 gitok --version
