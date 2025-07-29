@@ -3,7 +3,7 @@
 # Created by Dedan Okware
 
 # GitOK Configuration
-set -g GITOK_VERSION "2.0.2"
+set -g GITOK_VERSION "2.0.4"
 set -g GITOK_REPO "https://raw.githubusercontent.com/okwareddevnest/gitok/main"
 set -g GITOK_SCRIPT_PATH "$HOME/.gitok.fish"
 
